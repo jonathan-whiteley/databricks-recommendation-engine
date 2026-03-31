@@ -1,0 +1,36 @@
+# Recommender Accelerator Configuration
+# Edit this file to configure the pipeline for your environment.
+
+# Industry vertical: qsr | retail | grocery
+# Determines synthetic product catalog and co-purchase patterns.
+# Ignored when source_table is set.
+vertical: qsr
+
+# Databricks catalog and schema for all tables
+catalog: jdub_demo
+schema: recommender
+
+# Optional: point to your own transaction table instead of generating synthetic data.
+# When set, skip notebook 00 and run from notebook 01.
+# Table must have columns: user_id STRING, order_id STRING, order_date DATE, products ARRAY<STRING>
+# source_table: my_catalog.my_schema.my_orders
+
+# Items to exclude from recommendations (sauces, utensils, etc.)
+# Only used when source_table is set. Synthetic data has no items to exclude.
+exclude_items: []
+
+# Data generation parameters (only used by notebook 00)
+product_count: 50
+order_count: 500000
+user_count: 10000
+store_count: 50
+seed: 42
+
+# Model parameters
+mba_min_transactions: 1000
+mba_min_confidence: 0.0
+als_hpo_trials: 20
+recommendation_k: 5
+
+# MLflow experiment paths
+mlflow_experiment_root: /Shared/recommender-accelerator
