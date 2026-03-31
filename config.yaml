@@ -33,4 +33,4 @@ als_hpo_trials: 20
 recommendation_k: 5
 
 # MLflow experiment paths
-mlflow_experiment_root: /Shared/recommender-accelerator
+mlflow_experiment_root: /Users/jonathan.whiteley@databricks.com/recommender-accelerator

@@ -63,7 +63,7 @@ fpGrowth = FPGrowth(
     itemsCol="order_product_list",
     minSupport=min_transactions / num_transactions,
     minConfidence=min_confidence,
-    numPartitions=sc.defaultParallelism * 100,
+    numPartitions=200 * 100,
 )
 
 model = fpGrowth.fit(train)
