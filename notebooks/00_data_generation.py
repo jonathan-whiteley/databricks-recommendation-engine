@@ -27,7 +27,6 @@ order_count = cfg.get("order_count", 500000)
 user_count = cfg.get("user_count", 10000)
 store_count = cfg.get("store_count", 50)
 
-spark.sql(f"CREATE CATALOG IF NOT EXISTS {catalog}")
 spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.{schema}")
 
 print(f"Vertical: {cfg['vertical']} | Catalog: {catalog}.{schema}")

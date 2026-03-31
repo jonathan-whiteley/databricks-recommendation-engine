@@ -28,24 +28,20 @@ resources:
             notebook_path: ./notebooks/02_market_basket.py
           depends_on:
             - task_key: data_preparation
-          new_cluster:
-            spark_version: "15.4.x-ml-scala2.12"
-            node_type_id: "i3.xlarge"
-            num_workers: 2
-            data_security_mode: SINGLE_USER
 
         - task_key: collaborative_filter
           notebook_task:
             notebook_path: ./notebooks/03_collaborative_filter.py
           depends_on:
             - task_key: data_preparation
-          new_cluster:
-            spark_version: "15.4.x-ml-scala2.12"
-            node_type_id: "i3.xlarge"
-            num_workers: 2
-            data_security_mode: SINGLE_USER
 
       # Schedule OFF by default. Customer enables when ready.
       # schedule:
       #   quartz_cron_expression: "0 0 6 ? * MON"
       #   timezone_id: "America/Denver"
+
+targets:
+  dev:
+    default: true
+    workspace:
+      profile: DEFAULT
