@@ -8,9 +8,11 @@
 
 # COMMAND ----------
 
-# DBTITLE 1,Load config and vertical template
 # MAGIC %run ./config_loader
 
+# COMMAND ----------
+
+# DBTITLE 1,Load config and vertical template
 cfg = load_config()
 
 import sys, os

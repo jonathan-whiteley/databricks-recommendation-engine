@@ -12,9 +12,11 @@
 
 # COMMAND ----------
 
-# DBTITLE 1,Load config
 # MAGIC %run ./config_loader
 
+# COMMAND ----------
+
+# DBTITLE 1,Load config
 cfg = load_config()
 catalog = cfg["catalog"]
 schema = cfg["schema"]
