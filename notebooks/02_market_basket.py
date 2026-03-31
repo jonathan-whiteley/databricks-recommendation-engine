@@ -91,7 +91,7 @@ rules_df.sort_values(["confidence", "lift"], ascending=False).head(20)
 
 # DBTITLE 1,Save association rules
 # Convert frozensets to lists for Delta storage
-rules_for_delta = rules_df.copy()
+rules_for_delta = rules_df[["antecedents", "consequents", "support", "confidence", "lift"]].copy()
 rules_for_delta["antecedents"] = rules_for_delta["antecedents"].apply(list)
 rules_for_delta["consequents"] = rules_for_delta["consequents"].apply(list)
 
@@ -200,12 +200,8 @@ from mlflow.models.signature import ModelSignature
 from mlflow.types import ColSpec, Schema, DataType
 from mlflow.types.schema import Array
 
-experiment_name = f"{experiment_root}/market_basket_analysis"
-try:
-    mlflow.set_experiment(experiment_name)
-except Exception:
-    mlflow.create_experiment(experiment_name)
-    mlflow.set_experiment(experiment_name)
+experiment_name = f"/Users/{spark.sql('SELECT current_user()').collect()[0][0]}/recommender-accelerator-mba"
+mlflow.set_experiment(experiment_name)
 
 
 class MBARecommenderModel(mlflow.pyfunc.PythonModel):

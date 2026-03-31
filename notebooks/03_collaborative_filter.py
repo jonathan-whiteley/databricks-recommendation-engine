@@ -139,12 +139,8 @@ import optuna
 import mlflow
 from functools import partial
 
-experiment_name = f"{experiment_root}/als_collaborative_filter"
-try:
-    mlflow.set_experiment(experiment_name)
-except Exception:
-    mlflow.create_experiment(experiment_name)
-    mlflow.set_experiment(experiment_name)
+experiment_name = f"/Users/{spark.sql('SELECT current_user()').collect()[0][0]}/recommender-accelerator-als"
+mlflow.set_experiment(experiment_name)
 
 
 def evaluate_model(model, sparse_matrix, test_data, k=5):
