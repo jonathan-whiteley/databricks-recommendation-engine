@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {
+    "default": {
+      "format": "%(levelname)-7s / %(name)-30.30s / %(message)s"
+    },
+    "access": {
+      "format": "%(message)s"
+    }
+  },
+  "handlers": {
+    "default": {
+      "class": "logging.StreamHandler",
+      "formatter": "default",
+      "stream": "ext://sys.stderr"
+    },
+    "access": {
+      "class": "logging.StreamHandler",
+      "formatter": "access",
+      "stream": "ext://sys.stdout"
+    }
+  },
+  "loggers": {
+    "recommender_app": {
+      "handlers": [
+        "default"
+      ],
+      "level": "DEBUG",
+      "propagate": false
+    },
+    "databricks.sdk": {
+      "level": "INFO",
+      "propagate": true
+    },
+    "uvicorn": {
+      "handlers": [
+        "default"
+      ],
+      "level": "INFO",
+      "propagate": false
+    },
+    "uvicorn.access": {
+      "handlers": [
+        "access"
+      ],
+      "level": "INFO",
+      "propagate": false
+    },
+    "uvicorn.error": {
+      "level": "INFO",
+      "propagate": true
+    }
+  },
+  "root": {
+    "level": "INFO",
+    "handlers": [
+      "default"
+    ]
+  }
+}
