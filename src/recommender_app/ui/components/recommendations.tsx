@@ -80,15 +80,21 @@ export function Recommendations({
 
               {/* Content */}
               <div className="flex-grow min-w-0">
-                <div className="flex justify-between items-start mb-1">
-                  <h4 className="font-headline font-black text-base tracking-tight truncate">
-                    {productNames[rec.product] ?? rec.product}
-                  </h4>
-                  <span className="bg-[#10b981] text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tight shrink-0 ml-2">
+                <h4 className="font-headline font-black text-base tracking-tight truncate mb-2">
+                  {productNames[rec.product] ?? rec.product}
+                </h4>
+                <div className="flex items-center gap-0 mb-3">
+                  <div className="flex-grow bg-stone-100 rounded-l-full h-7">
+                    <div
+                      className="h-7 rounded-l-full bg-brand transition-all"
+                      style={{ width: `${matchPercent}%` }}
+                    />
+                  </div>
+                  <span className="bg-[#10b981] text-white text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-tight shrink-0 -ml-1">
                     {matchPercent}% Match
                   </span>
                 </div>
-                <div className="flex justify-between items-center mt-3">
+                <div className="flex justify-between items-center">
                   <span className="font-headline font-black text-sm text-stone-800">
                     ${(productPrices[rec.product] ?? 0).toFixed(2)}
                   </span>
