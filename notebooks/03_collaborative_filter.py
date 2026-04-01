@@ -77,9 +77,11 @@ def preprocess_pipeline(dataset_sdf):
     grouped = grouped.merge(user_totals, on="user_id_int")
     grouped["proportion_of_orders"] = grouped["item_count"] / grouped["total_orders"]
 
-    # Build sparse CSR matrix (user x item)
+    # Build sparse CSR matrix (user x item) using raw counts as confidence signal.
+    # implicit's ALS treats values as confidence weights; raw counts work better
+    # than proportions since proportions compress the signal range.
     sparse_matrix = sparse.csr_matrix(
-        (grouped["proportion_of_orders"].values,
+        (grouped["item_count"].values.astype(np.float32),
          (grouped["user_id_int"].values, grouped["item_id"].values)),
         shape=(len(unique_users), len(unique_items)),
     )
@@ -123,9 +125,10 @@ print(f"Test set: {len(test_linked):,} evaluable rows")
 from implicit.als import AlternatingLeastSquares
 
 
-def train_als(sparse_matrix, rank, maxIter):
+def train_als(sparse_matrix, rank, maxIter, regularization=0.1):
     model = AlternatingLeastSquares(
         factors=rank,
+        regularization=regularization,
         iterations=maxIter,
         use_gpu=False,
     )
@@ -152,9 +155,15 @@ def evaluate_model(model, sparse_matrix, test_data, k=5):
         added_item_id = row["added_item_id"]
 
         # Get top-k recommendations for this user
+        # Use more candidates for evaluation since we're not filtering liked items
         item_ids, scores = model.recommend(
-            user_idx, sparse_matrix[user_idx], N=k, filter_already_liked_items=False
+            user_idx, sparse_matrix[user_idx], N=k * 2, filter_already_liked_items=False
         )
+        # Only keep top-k after removing cart items
+        cart_items = set()
+        if isinstance(row.get("cart"), list):
+            cart_items = {item_to_idx.get(s) for s in row["cart"] if s in item_to_idx}
+        item_ids = [i for i in item_ids if i not in cart_items][:k]
 
         if added_item_id in item_ids:
             hits += 1
@@ -231,8 +240,11 @@ for _, user_row in user_map_full.iterrows():
     user_idx = user_row["user_id_int"]
     user_id = user_row["user"]
 
+    # Don't filter already-liked items here; the app handles cart filtering.
+    # With synthetic data, users interact with many products, so filtering
+    # leaves few/no valid recommendations.
     item_ids, scores = final_model.recommend(
-        user_idx, sparse_full[user_idx], N=k, filter_already_liked_items=True
+        user_idx, sparse_full[user_idx], N=k, filter_already_liked_items=False
     )
 
     recs = []
