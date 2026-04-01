@@ -60,7 +60,6 @@ function HomePage() {
   const fetchRecs = useCallback(
     async (currentCart: CartItem[], currentMode: "known" | "anonymous", userId: string | null) => {
       const slugs = currentCart.map((c) => c.slug);
-      // Require at least one cart item before showing recommendations
       if (slugs.length === 0) {
         setRecommendations([]);
         return;
@@ -141,46 +140,72 @@ function HomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-xl font-bold">Recommender Accelerator</h1>
-          <div className="flex items-center gap-4">
-            <ModeToggle mode={mode} onModeChange={handleModeChange} />
-            {mode === "known" && (
-              <UserSearch users={users} selectedUser={selectedUser} onUserSelect={handleUserSelect} />
-            )}
-          </div>
+    <div className="min-h-screen bg-[#fcf9f8] text-[#1c1b1b]">
+      {/* Top NavBar */}
+      <header className="w-full top-0 sticky z-50 bg-[#f6f3f2] flex justify-between items-center px-8 py-6">
+        <div className="flex items-center gap-12">
+          <h1 className="text-2xl font-black text-[#ad2c00] font-headline tracking-tighter uppercase">
+            The Culinary Editorial
+          </h1>
+          <nav className="hidden md:flex items-center gap-8 font-headline tracking-tighter font-bold uppercase text-sm">
+            <a className="text-[#1c1b1b] hover:bg-stone-200 transition-colors px-2 py-1" href="#">
+              Menu
+            </a>
+            <a className="text-[#ad2c00] px-2 py-1" href="#">
+              Checkout
+            </a>
+          </nav>
+        </div>
+        <div className="flex items-center gap-4">
+          <ModeToggle mode={mode} onModeChange={handleModeChange} />
+          {mode === "known" && (
+            <UserSearch users={users} selectedUser={selectedUser} onUserSelect={handleUserSelect} />
+          )}
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ProductGrid products={products} onAddToCart={addToCart} cartSlugs={cartSlugs} />
-          </div>
-          <div className="space-y-4">
-            {mode === "known" && userProfile && (
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <div className="text-sm font-medium">{userProfile.user_id}</div>
-                <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                  {userProfile.primary_store && <div>Store: {userProfile.primary_store}</div>}
-                  {userProfile.total_orders && <div>Total orders: {userProfile.total_orders}</div>}
-                  {userProfile.store_visits && <div>Visits to this store: {userProfile.store_visits}</div>}
+      {/* Main Layout: Catalog + Sidebar */}
+      <main className="flex flex-col md:flex-row min-h-screen relative">
+        {/* Catalog Section */}
+        <div className="flex-1 p-8 lg:p-12 mb-24 md:mb-0">
+          {/* User Profile Info (if known mode) */}
+          {mode === "known" && userProfile && (
+            <div className="mb-8 bg-white rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-[#f6f3f2] flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[#ad2c00]">person</span>
+                </div>
+                <div>
+                  <div className="font-headline font-black text-lg">{userProfile.user_id}</div>
+                  <div className="text-xs text-stone-400 font-medium flex gap-4 mt-0.5">
+                    {userProfile.primary_store && <span>Store: {userProfile.primary_store}</span>}
+                    {userProfile.total_orders && <span>Orders: {userProfile.total_orders}</span>}
+                    {userProfile.store_visits && <span>Visits: {userProfile.store_visits}</span>}
+                  </div>
                 </div>
               </div>
-            )}
-            <CartPanel items={cart} onRemove={removeFromCart} onClear={clearCart} />
-            <Recommendations
-              recommendations={recommendations}
-              source={source}
-              loading={loading}
-              productNames={productNames}
-              productPrices={productPrices}
-              onAddToCart={addToCart}
-            />
-          </div>
+            </div>
+          )}
+
+          <ProductGrid products={products} onAddToCart={addToCart} cartSlugs={cartSlugs} />
         </div>
+
+        {/* Sidebar */}
+        <aside className="w-full md:w-[460px] bg-[#fdfcfc] flex flex-col md:sticky md:top-0 md:h-screen md:overflow-y-auto">
+          {/* Cart Section (white bg) */}
+          <CartPanel items={cart} onRemove={removeFromCart} onClear={clearCart} />
+
+          {/* Recommendations Section (#f5f2f0 bg) */}
+          <Recommendations
+            recommendations={recommendations}
+            source={source}
+            loading={loading}
+            productNames={productNames}
+            productPrices={productPrices}
+            onAddToCart={addToCart}
+            userName={userProfile?.user_id}
+          />
+        </aside>
       </main>
     </div>
   );

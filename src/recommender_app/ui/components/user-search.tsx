@@ -14,24 +14,27 @@ interface UserSearchProps {
 
 export function UserSearch({ users, selectedUser, onUserSelect }: UserSearchProps) {
   return (
-    <Select value={selectedUser ?? ""} onValueChange={onUserSelect}>
-      <SelectTrigger className="w-72">
-        <SelectValue placeholder="Select a user ID..." />
-      </SelectTrigger>
-      <SelectContent>
-        {users.map((u) => (
-          <SelectItem key={u.user_id} value={u.user_id}>
-            <div className="flex items-center gap-2">
-              <span>{u.user_id}</span>
-              {u.primary_store && (
-                <span className="text-xs text-muted-foreground">
-                  {u.primary_store}
-                </span>
-              )}
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex items-center gap-3 bg-[#f6f3f2] px-4 py-2 rounded-full cursor-pointer hover:bg-[#eae7e7] transition-colors">
+      <span className="material-symbols-outlined text-[#ad2c00]">person_check</span>
+      <Select value={selectedUser ?? ""} onValueChange={onUserSelect}>
+        <SelectTrigger className="border-none bg-transparent shadow-none p-0 h-auto min-w-[140px] font-bold font-[Plus_Jakarta_Sans] text-sm focus:ring-0">
+          <SelectValue placeholder="Select user..." />
+        </SelectTrigger>
+        <SelectContent>
+          {users.map((u) => (
+            <SelectItem key={u.user_id} value={u.user_id}>
+              <div className="flex items-center gap-2">
+                <span>{u.user_id}</span>
+                {u.primary_store && (
+                  <span className="text-xs text-stone-400">
+                    {u.primary_store}
+                  </span>
+                )}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

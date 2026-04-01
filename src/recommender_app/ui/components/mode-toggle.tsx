@@ -1,5 +1,3 @@
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 interface ModeToggleProps {
   mode: "known" | "anonymous";
   onModeChange: (mode: "known" | "anonymous") => void;
@@ -7,11 +5,27 @@ interface ModeToggleProps {
 
 export function ModeToggle({ mode, onModeChange }: ModeToggleProps) {
   return (
-    <Tabs value={mode} onValueChange={(v) => onModeChange(v as "known" | "anonymous")}>
-      <TabsList>
-        <TabsTrigger value="known">Known User</TabsTrigger>
-        <TabsTrigger value="anonymous">Anonymous</TabsTrigger>
-      </TabsList>
-    </Tabs>
+    <div className="flex bg-[#f0eded] rounded-full p-1">
+      <button
+        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+          mode === "known"
+            ? "bg-[#ad2c00] text-white"
+            : "text-[#5d4038]"
+        }`}
+        onClick={() => onModeChange("known")}
+      >
+        Known
+      </button>
+      <button
+        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+          mode === "anonymous"
+            ? "bg-[#ad2c00] text-white"
+            : "text-[#5d4038]"
+        }`}
+        onClick={() => onModeChange("anonymous")}
+      >
+        Guest
+      </button>
+    </div>
   );
 }
