@@ -193,10 +193,10 @@ function HomePage() {
         </div>
       </header>
 
-      {/* Main Layout: Catalog + Sidebar */}
+      {/* Main Layout: Catalog (2/3) + Sidebar (1/3) */}
       <main className="flex flex-col md:flex-row min-h-screen relative">
         {/* Catalog Section */}
-        <div className="flex-1 p-8 lg:p-12 mb-24 md:mb-0">
+        <div className="w-full md:w-2/3 p-8 lg:p-10 mb-24 md:mb-0">
           {/* User Profile Info (if known mode) */}
           {mode === "known" && userProfile && (
             <div className="mb-8 bg-white rounded-3xl p-6 shadow-sm">
@@ -220,7 +220,7 @@ function HomePage() {
         </div>
 
         {/* Sidebar */}
-        <aside className="w-full md:w-[460px] bg-[#fdfcfc] flex flex-col md:sticky md:top-0 md:h-screen md:overflow-y-auto">
+        <aside className="w-full md:w-1/3 bg-[#fdfcfc] border-l border-[#eae7e7] flex flex-col md:sticky md:top-0 md:h-screen md:overflow-y-auto">
           {/* Cart Section (white bg) */}
           <CartPanel items={cart} onRemove={removeFromCart} onClear={clearCart} />
 
