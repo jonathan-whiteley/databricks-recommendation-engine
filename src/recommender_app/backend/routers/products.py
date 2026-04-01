@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from recommender_app.db import get_connection
+from recommender_app.backend.db import get_connection
 
 router = APIRouter(prefix="/api", tags=["products"])
 
