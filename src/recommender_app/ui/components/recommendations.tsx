@@ -83,14 +83,14 @@ export function Recommendations({
                 <h4 className="font-headline font-black text-base tracking-tight truncate mb-2">
                   {productNames[rec.product] ?? rec.product}
                 </h4>
-                <div className="flex items-center gap-0 mb-3">
-                  <div className="flex-grow bg-stone-100 rounded-l-full h-7">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex-grow bg-stone-100 rounded-full h-2">
                     <div
-                      className="h-7 rounded-l-full bg-brand transition-all"
+                      className="h-2 rounded-full bg-brand transition-all"
                       style={{ width: `${matchPercent}%` }}
                     />
                   </div>
-                  <span className="bg-[#10b981] text-white text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-tight shrink-0 -ml-1">
+                  <span className="bg-[#10b981] text-white text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-tight shrink-0">
                     {matchPercent}% Match
                   </span>
                 </div>
