@@ -315,3 +315,61 @@ export function useGet_user_api_users__user_id__getSuspense<TData = {
         ...options?.query
     });
 }
+export interface Spa_fallback__path__getParams {
+    path: string;
+}
+export const spa_fallback__path__get = async (params: Spa_fallback__path__getParams, options?: RequestInit): Promise<{
+    data: unknown;
+}> =>{
+    const res = await fetch(`/${params.path}`, {
+        ...options,
+        method: "GET"
+    });
+    if (!res.ok) {
+        const body = await res.text();
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(body);
+        } catch  {
+            parsed = body;
+        }
+        throw new ApiError(res.status, res.statusText, parsed);
+    }
+    return {
+        data: await res.json()
+    };
+};
+export const spa_fallback__path__getKey = (params?: Spa_fallback__path__getParams)=>{
+    return [
+        "/{path}",
+        params
+    ] as const;
+};
+export function useSpa_fallback__path__get<TData = {
+    data: unknown;
+}>(options: {
+    params: Spa_fallback__path__getParams;
+    query?: Omit<UseQueryOptions<{
+        data: unknown;
+    }, ApiError, TData>, "queryKey" | "queryFn">;
+}) {
+    return useQuery({
+        queryKey: spa_fallback__path__getKey(options.params),
+        queryFn: ()=>spa_fallback__path__get(options.params),
+        ...options?.query
+    });
+}
+export function useSpa_fallback__path__getSuspense<TData = {
+    data: unknown;
+}>(options: {
+    params: Spa_fallback__path__getParams;
+    query?: Omit<UseSuspenseQueryOptions<{
+        data: unknown;
+    }, ApiError, TData>, "queryKey" | "queryFn">;
+}) {
+    return useSuspenseQuery({
+        queryKey: spa_fallback__path__getKey(options.params),
+        queryFn: ()=>spa_fallback__path__get(options.params),
+        ...options?.query
+    });
+}
