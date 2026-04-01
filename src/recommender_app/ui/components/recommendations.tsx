@@ -72,7 +72,7 @@ export function Recommendations({
         <span className="relative text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-wide shadow-md overflow-hidden bg-white text-brand border border-brand-light">
           <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-[shimmer_2s_infinite] pointer-events-none" />
           <span className="relative flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-xs">{source === "als" ? "auto_awesome" : "shopping_cart"}</span>
+            <span className="material-symbols-outlined text-xs">{source === "als" ? "psychology" : "shopping_cart"}</span>
             {source === "als" ? "Personalized" : "Based on cart"}
           </span>
         </span>
