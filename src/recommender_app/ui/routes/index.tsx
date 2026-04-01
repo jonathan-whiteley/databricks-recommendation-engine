@@ -29,6 +29,13 @@ interface Rec {
   rank: number;
 }
 
+interface UserProfile {
+  user_id: string;
+  primary_store: string | null;
+  store_visits: number | null;
+  total_orders: number | null;
+}
+
 function HomePage() {
   const [mode, setMode] = useState<"known" | "anonymous">("anonymous");
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -38,6 +45,7 @@ function HomePage() {
   const [recommendations, setRecommendations] = useState<Rec[]>([]);
   const [source, setSource] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const productMap = Object.fromEntries(products.map((p) => [p.product_slug, p]));
   const productNames = Object.fromEntries(products.map((p) => [p.product_slug, p.product_name]));
@@ -109,6 +117,7 @@ function HomePage() {
     (newMode: "known" | "anonymous") => {
       setMode(newMode);
       setRecommendations([]);
+      if (newMode === "anonymous") setUserProfile(null);
       if (cart.length > 0) {
         if (newMode === "known" && selectedUser) {
           fetchRecs(cart, newMode, selectedUser);
@@ -123,6 +132,7 @@ function HomePage() {
   const handleUserSelect = useCallback(
     (userId: string) => {
       setSelectedUser(userId);
+      fetch(`/api/users/${userId}`).then((r) => r.json()).then(setUserProfile);
       if (cart.length > 0) {
         fetchRecs(cart, "known", userId);
       }
@@ -150,6 +160,16 @@ function HomePage() {
             <ProductGrid products={products} onAddToCart={addToCart} cartSlugs={cartSlugs} />
           </div>
           <div className="space-y-4">
+            {mode === "known" && userProfile && (
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <div className="text-sm font-medium">{userProfile.user_id}</div>
+                <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                  {userProfile.primary_store && <div>Store: {userProfile.primary_store}</div>}
+                  {userProfile.total_orders && <div>Total orders: {userProfile.total_orders}</div>}
+                  {userProfile.store_visits && <div>Visits to this store: {userProfile.store_visits}</div>}
+                </div>
+              </div>
+            )}
             <CartPanel items={cart} onRemove={removeFromCart} onClear={clearCart} />
             <Recommendations
               recommendations={recommendations}

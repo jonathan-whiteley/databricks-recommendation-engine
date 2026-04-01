@@ -1,8 +1,8 @@
 {
-  "pid": 74173,
-  "started_at": "2026-04-01T17:53:30.773150+00:00",
+  "pid": 84489,
+  "started_at": "2026-04-01T18:07:06.576603+00:00",
   "port": 9000,
   "command": "uv run apx dev __internal__run_server --app-dir /Users/jonathan.whiteley/Desktop/Projects/recommender-accelerator --host 127.0.0.1 --port 9000",
   "app_dir": "/Users/jonathan.whiteley/Desktop/Projects/recommender-accelerator",
-  "token": "UyaedgppHrLZgjejcr2Hz9dk867BDNXH"
+  "token": "IoPvydst1ppQPnLYLBGF1dkhmqyH4Ql8"
 }

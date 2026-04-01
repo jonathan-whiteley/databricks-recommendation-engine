@@ -2,11 +2,11 @@
   "version": 1,
   "disable_existing_loggers": false,
   "formatters": {
-    "default": {
-      "format": "%(levelname)-7s / %(name)-30.30s / %(message)s"
-    },
     "access": {
       "format": "%(message)s"
+    },
+    "default": {
+      "format": "%(levelname)-7s / %(name)-30.30s / %(message)s"
     }
   },
   "handlers": {
@@ -22,7 +22,7 @@
     }
   },
   "loggers": {
-    "databricks.sdk": {
+    "uvicorn.error": {
       "level": "INFO",
       "propagate": true
     },
@@ -47,7 +47,7 @@
       "level": "DEBUG",
       "propagate": false
     },
-    "uvicorn.error": {
+    "databricks.sdk": {
       "level": "INFO",
       "propagate": true
     }

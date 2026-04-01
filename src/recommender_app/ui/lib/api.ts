@@ -38,6 +38,14 @@ export interface Recommendation {
     score: number;
 }
 export interface UserInfo {
+    primary_store?: string | null;
+    total_orders?: number | null;
+    user_id: string;
+}
+export interface UserProfile {
+    primary_store?: string | null;
+    store_visits?: number | null;
+    total_orders?: number | null;
     user_id: string;
 }
 export interface ValidationError {
@@ -246,6 +254,64 @@ export function useList_users_api_users_getSuspense<TData = {
     return useSuspenseQuery({
         queryKey: list_users_api_users_getKey(options?.params),
         queryFn: ()=>list_users_api_users_get(options?.params),
+        ...options?.query
+    });
+}
+export interface Get_user_api_users__user_id__getParams {
+    user_id: string;
+}
+export const get_user_api_users__user_id__get = async (params: Get_user_api_users__user_id__getParams, options?: RequestInit): Promise<{
+    data: UserProfile;
+}> =>{
+    const res = await fetch(`/api/users/${params.user_id}`, {
+        ...options,
+        method: "GET"
+    });
+    if (!res.ok) {
+        const body = await res.text();
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(body);
+        } catch  {
+            parsed = body;
+        }
+        throw new ApiError(res.status, res.statusText, parsed);
+    }
+    return {
+        data: await res.json()
+    };
+};
+export const get_user_api_users__user_id__getKey = (params?: Get_user_api_users__user_id__getParams)=>{
+    return [
+        "/api/users/{user_id}",
+        params
+    ] as const;
+};
+export function useGet_user_api_users__user_id__get<TData = {
+    data: UserProfile;
+}>(options: {
+    params: Get_user_api_users__user_id__getParams;
+    query?: Omit<UseQueryOptions<{
+        data: UserProfile;
+    }, ApiError, TData>, "queryKey" | "queryFn">;
+}) {
+    return useQuery({
+        queryKey: get_user_api_users__user_id__getKey(options.params),
+        queryFn: ()=>get_user_api_users__user_id__get(options.params),
+        ...options?.query
+    });
+}
+export function useGet_user_api_users__user_id__getSuspense<TData = {
+    data: UserProfile;
+}>(options: {
+    params: Get_user_api_users__user_id__getParams;
+    query?: Omit<UseSuspenseQueryOptions<{
+        data: UserProfile;
+    }, ApiError, TData>, "queryKey" | "queryFn">;
+}) {
+    return useSuspenseQuery({
+        queryKey: get_user_api_users__user_id__getKey(options.params),
+        queryFn: ()=>get_user_api_users__user_id__get(options.params),
         ...options?.query
     });
 }
