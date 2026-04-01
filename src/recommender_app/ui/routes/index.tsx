@@ -48,10 +48,10 @@ function HomePage() {
   const [loading, setLoading] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [brandName, setBrandName] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("lakehouse-market-brand") || "{}").storeName; } catch { return null; }
-  } || "Lakehouse Market");
+    try { return JSON.parse(localStorage.getItem("lakehouse-market-brand") || "{}").storeName || "Lakehouse Market"; } catch { return "Lakehouse Market"; }
+  });
   const [logoUrl, setLogoUrl] = useState<string | null>(() => {
-    try { return JSON.parse(localStorage.getItem("lakehouse-market-brand") || "{}").logoUrl; } catch { return null; }
+    try { return JSON.parse(localStorage.getItem("lakehouse-market-brand") || "{}").logoUrl || null; } catch { return null; }
   });
 
   // Apply saved brand color on mount
