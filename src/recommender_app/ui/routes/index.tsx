@@ -52,7 +52,8 @@ function HomePage() {
   const fetchRecs = useCallback(
     async (currentCart: CartItem[], currentMode: "known" | "anonymous", userId: string | null) => {
       const slugs = currentCart.map((c) => c.slug);
-      if (currentMode === "anonymous" && slugs.length === 0) {
+      // Require at least one cart item before showing recommendations
+      if (slugs.length === 0) {
         setRecommendations([]);
         return;
       }
@@ -108,10 +109,12 @@ function HomePage() {
     (newMode: "known" | "anonymous") => {
       setMode(newMode);
       setRecommendations([]);
-      if (newMode === "known" && selectedUser) {
-        fetchRecs(cart, newMode, selectedUser);
-      } else if (newMode === "anonymous" && cart.length > 0) {
-        fetchRecs(cart, newMode, null);
+      if (cart.length > 0) {
+        if (newMode === "known" && selectedUser) {
+          fetchRecs(cart, newMode, selectedUser);
+        } else if (newMode === "anonymous") {
+          fetchRecs(cart, newMode, null);
+        }
       }
     },
     [cart, selectedUser, fetchRecs],
@@ -120,7 +123,9 @@ function HomePage() {
   const handleUserSelect = useCallback(
     (userId: string) => {
       setSelectedUser(userId);
-      fetchRecs(cart, "known", userId);
+      if (cart.length > 0) {
+        fetchRecs(cart, "known", userId);
+      }
     },
     [cart, fetchRecs],
   );

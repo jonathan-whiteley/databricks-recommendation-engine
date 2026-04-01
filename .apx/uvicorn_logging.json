@@ -22,16 +22,16 @@
     }
   },
   "loggers": {
-    "recommender_app": {
-      "handlers": [
-        "default"
-      ],
-      "level": "DEBUG",
-      "propagate": false
-    },
     "databricks.sdk": {
       "level": "INFO",
       "propagate": true
+    },
+    "uvicorn.access": {
+      "handlers": [
+        "access"
+      ],
+      "level": "INFO",
+      "propagate": false
     },
     "uvicorn": {
       "handlers": [
@@ -40,11 +40,11 @@
       "level": "INFO",
       "propagate": false
     },
-    "uvicorn.access": {
+    "recommender_app": {
       "handlers": [
-        "access"
+        "default"
       ],
-      "level": "INFO",
+      "level": "DEBUG",
       "propagate": false
     },
     "uvicorn.error": {

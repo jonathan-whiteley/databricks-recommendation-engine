@@ -66,7 +66,7 @@ export function Recommendations({
                 <div className="flex items-center gap-2 mt-1">
                   <Progress value={(rec.score / maxScore) * 100} className="h-1.5 flex-1" />
                   <span className="text-xs font-mono text-muted-foreground w-12 text-right">
-                    {(rec.score * 100).toFixed(0)}%
+                    {((rec.score / maxScore) * 100).toFixed(0)}%
                   </span>
                 </div>
               </div>
