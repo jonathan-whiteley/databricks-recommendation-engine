@@ -146,30 +146,20 @@ experiment_name = f"/Users/{spark.sql('SELECT current_user()').collect()[0][0]}/
 mlflow.set_experiment(experiment_name)
 
 
-def evaluate_model(model, sparse_matrix, test_data, k=5):
-    """Evaluate Hit@k for an implicit ALS model."""
-    hits = 0
-    total = 0
-    for _, row in test_data.iterrows():
-        user_idx = row["user_id_int"]
-        added_item_id = row["added_item_id"]
+def evaluate_model(model, sparse_matrix, test_data, k=5, sample_size=2000):
+    """Evaluate Hit@k for an implicit ALS model. Samples test data for speed."""
+    eval_data = test_data.sample(n=min(sample_size, len(test_data)), random_state=42) if len(test_data) > sample_size else test_data
 
-        # Get top-k recommendations for this user
-        # Use more candidates for evaluation since we're not filtering liked items
-        item_ids, scores = model.recommend(
-            user_idx, sparse_matrix[user_idx], N=k * 2, filter_already_liked_items=False
-        )
-        # Only keep top-k after removing cart items
-        cart_items = set()
-        if isinstance(row.get("cart"), list):
-            cart_items = {item_to_idx.get(s) for s in row["cart"] if s in item_to_idx}
-        item_ids = [i for i in item_ids if i not in cart_items][:k]
+    # Batch recommend for all unique test users at once
+    test_user_ids = eval_data["user_id_int"].unique()
+    user_items = sparse_matrix[test_user_ids]
+    all_ids, all_scores = model.recommend(test_user_ids, user_items, N=k, filter_already_liked_items=False)
 
-        if added_item_id in item_ids:
-            hits += 1
-        total += 1
+    # Build lookup: user_idx -> set of recommended item_ids
+    user_recs = {uid: set(ids) for uid, ids in zip(test_user_ids, all_ids)}
 
-    return hits / total if total > 0 else 0.0
+    hits = sum(1 for _, row in eval_data.iterrows() if row["added_item_id"] in user_recs.get(row["user_id_int"], set()))
+    return hits / len(eval_data) if len(eval_data) > 0 else 0.0
 
 
 def objective(trial, parent_run_id, k=5):
