@@ -10,17 +10,19 @@ A configurable, demo-ready product recommendation system built on Databricks. Ge
    cd databricks-recommendation-engine
    ```
    Edit `config.yaml`: set your `catalog`, `schema`, and `vertical` (qsr, retail, or grocery).
+   Edit `app.yml`: set `LAKEBASE_INSTANCE_NAME` to your Lakebase instance.
 
-2. **Deploy the pipeline:**
+2. **Deploy everything** (pipeline + app):
    ```bash
-   databricks bundle deploy
+   apx build                      # Build the frontend + Python wheel
+   databricks bundle deploy       # Deploy notebooks, job, and app to workspace
    ```
 
 3. **Run the training pipeline:**
    ```bash
    databricks bundle run recommender_training_pipeline
    ```
-   This runs all 4 notebooks in sequence (~14 min): generates synthetic data, cleans it, trains MBA and ALS models, and writes recommendation lookup tables to Delta.
+   Runs all 4 notebooks (~14 min): generates synthetic data, cleans it, trains MBA and ALS models, writes recommendation lookup tables to Delta.
 
 4. **Set up Lakebase:**
 
@@ -47,20 +49,23 @@ A configurable, demo-ready product recommendation system built on Databricks. Ge
    );
    ```
 
-   Load data from Delta into Lakebase using the Databricks SDK and SQL warehouse (see the loading script pattern in the repo docs), or set up Lakebase synced tables if your workspace supports UC catalog registration.
+   Load data from Delta into Lakebase using the Databricks SDK and SQL warehouse, or set up Lakebase synced tables if your workspace supports UC catalog registration.
 
-5. **Install app dependencies:**
+5. **Start the app:**
    ```bash
-   uv sync          # Python dependencies
-   bun install      # JavaScript dependencies
-   apx components add tabs select badge card progress input button
+   databricks bundle run recommender_app    # Deploy and start the Databricks App
    ```
+   The app URL will be shown in the output.
 
-6. **Start the app:**
-   ```bash
-   LAKEBASE_INSTANCE_NAME=<your-instance> apx dev start
-   ```
-   Open http://localhost:9000 in your browser.
+### Local Development
+
+For local development and testing:
+```bash
+uv sync                    # Python dependencies
+bun install                # JavaScript dependencies
+apx components add tabs select badge card progress input button
+LAKEBASE_INSTANCE_NAME=<your-instance> apx dev start   # http://localhost:9000
+```
 
 ## Configuration
 
