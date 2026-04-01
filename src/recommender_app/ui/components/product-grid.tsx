@@ -33,22 +33,28 @@ export function ProductGrid({ products, onAddToCart, cartSlugs }: ProductGridPro
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const categories = [...new Set(products.map((p) => p.category))];
-  const filtered = products.filter((p) => {
-    const matchesSearch = p.product_name.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = !activeCategory || p.category === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Sort categories: put Entrees-type categories first, then alphabetical
+  const CATEGORY_ORDER: Record<string, number> = {
+    Entrees: 0, Sides: 1, Drinks: 2, Desserts: 3,
+    Electronics: 0, Accessories: 1, Clothing: 2, Home: 3,
+    Produce: 0, Dairy: 1, Bakery: 2, Pantry: 3,
+  };
+  const categories = [...new Set(products.map((p) => p.category))].sort(
+    (a, b) => (CATEGORY_ORDER[a] ?? 99) - (CATEGORY_ORDER[b] ?? 99)
+  );
+  const filtered = products
+    .filter((p) => {
+      const matchesSearch = p.product_name.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = !activeCategory || p.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => (CATEGORY_ORDER[a.category] ?? 99) - (CATEGORY_ORDER[b.category] ?? 99));
 
   return (
     <div>
-      {/* Editorial Header */}
-      <header className="mb-12">
-        <p className="font-headline font-extrabold text-[#ad2c00] text-sm uppercase tracking-widest mb-2">
-          Editor's Pick
-        </p>
-        <h2 className="font-headline text-5xl font-black tracking-tighter leading-none mb-4">
-          Sizzle &amp; Slate<br />Essentials
+      <header className="mb-10">
+        <h2 className="font-headline text-4xl font-black tracking-tighter leading-none mb-4">
+          Browse Our Selection
         </h2>
 
         {/* Search as subtle inline input */}

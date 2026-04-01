@@ -145,7 +145,7 @@ function HomePage() {
       <header className="w-full top-0 sticky z-50 bg-[#f6f3f2] flex justify-between items-center px-8 py-6">
         <div className="flex items-center gap-12">
           <h1 className="text-2xl font-black text-[#ad2c00] font-headline tracking-tighter uppercase">
-            The Culinary Editorial
+            Lakehouse Market
           </h1>
           <nav className="hidden md:flex items-center gap-8 font-headline tracking-tighter font-bold uppercase text-sm">
             <a className="text-[#1c1b1b] hover:bg-stone-200 transition-colors px-2 py-1" href="#">
