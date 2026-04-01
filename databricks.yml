@@ -6,16 +6,25 @@ variables:
     default: jdub_demo
   schema:
     default: recommender
+  lakebase_instance:
+    default: jdub-lakebase-db-instance
+
+sync:
+  include:
+    - .build
+
+artifacts:
+  default:
+    build: apx build
 
 resources:
   jobs:
     recommender_training_pipeline:
-      name: "Recommender Training Pipeline"
+      name: "[${bundle.target}] Recommender Training Pipeline"
       tasks:
         - task_key: data_generation
           notebook_task:
             notebook_path: ./notebooks/00_data_generation.py
-          # Serverless - no cluster config needed
 
         - task_key: data_preparation
           notebook_task:
@@ -40,8 +49,15 @@ resources:
       #   quartz_cron_expression: "0 0 6 ? * MON"
       #   timezone_id: "America/Denver"
 
+  apps:
+    recommender_app:
+      name: "recommender-accelerator-${bundle.target}"
+      description: "Lakehouse Market - Product recommendation demo app powered by MBA + ALS models"
+      source_code_path: ./.build
+
 targets:
   dev:
     default: true
+    mode: development
     workspace:
       profile: DEFAULT
