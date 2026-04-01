@@ -46,7 +46,19 @@ export function Recommendations({
     );
   }
 
-  const maxScore = Math.max(...recommendations.map((r) => r.score));
+  // Spread scores across a visible range (top item = 95%, last item = ~60%)
+  // This prevents all items showing ~100% when raw scores are tightly clustered
+  const scores = recommendations.map((r) => r.score);
+  const maxScore = Math.max(...scores);
+  const minScore = Math.min(...scores);
+  const scoreRange = maxScore - minScore;
+
+  function toDisplayPercent(score: number): number {
+    if (scoreRange < 0.001) return 95; // all scores identical
+    const normalized = (score - minScore) / scoreRange; // 0 to 1
+    return Math.round(60 + normalized * 35); // map to 60-95%
+  }
+
   const displayName = userName || "You";
 
   return (
@@ -65,7 +77,7 @@ export function Recommendations({
       {/* Recommendation Cards */}
       <div className="flex flex-col gap-4">
         {recommendations.map((rec) => {
-          const matchPercent = ((rec.score / maxScore) * 100).toFixed(0);
+          const matchPercent = toDisplayPercent(rec.score);
           return (
             <div
               key={rec.product}
