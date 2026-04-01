@@ -91,7 +91,7 @@ export function ProductGrid({ products, onAddToCart, cartSlugs }: ProductGridPro
       </header>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-3 gap-4">
         {filtered.map((p) => {
           const inCart = cartSlugs.has(p.product_slug);
           const icon = CATEGORY_ICONS[p.category] ?? "restaurant";
@@ -99,35 +99,31 @@ export function ProductGrid({ products, onAddToCart, cartSlugs }: ProductGridPro
           return (
             <div
               key={p.product_slug}
-              className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer group"
             >
               {/* Image Placeholder */}
-              <div className="aspect-square bg-[#f0f0f0] rounded-2xl flex flex-col items-center justify-center mb-6 relative">
-                <span className="material-symbols-outlined text-[#bdbdbd] text-8xl mb-2">
+              <div className="aspect-[4/3] bg-[#f0f0f0] rounded-xl flex flex-col items-center justify-center mb-3 relative">
+                <span className="material-symbols-outlined text-[#bdbdbd] text-5xl mb-1">
                   {icon}
                 </span>
-                <span className="font-headline font-black text-4xl tracking-tight text-[#bdbdbd] uppercase">
+                <span className="font-headline font-black text-sm tracking-tight text-[#bdbdbd] uppercase">
                   {p.category}
                 </span>
               </div>
 
               {/* Product Info */}
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-headline font-black text-2xl tracking-tight">
+              <div className="flex justify-between items-start mb-1">
+                <h3 className="font-headline font-black text-sm tracking-tight leading-tight">
                   {p.product_name}
                 </h3>
-                <span className="font-headline font-black text-xl text-[#ad2c00]">
+                <span className="font-headline font-black text-sm text-[#ad2c00] shrink-0 ml-2">
                   ${p.base_price.toFixed(2)}
                 </span>
               </div>
 
-              <p className="text-stone-500 text-sm leading-relaxed max-w-[80%] mb-6">
-                {p.category}
-              </p>
-
               {/* Add to Cart Button */}
               <button
-                className={`w-full font-headline font-black py-4 rounded-full text-sm uppercase tracking-widest transition-all ${
+                className={`w-full font-headline font-black py-2.5 rounded-full text-xs uppercase tracking-widest transition-all mt-3 ${
                   inCart
                     ? "bg-[#ad2c00] text-white"
                     : "bg-[#f6f3f2] text-[#ad2c00] hover:bg-[#ad2c00] hover:text-white"

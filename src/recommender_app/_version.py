@@ -1,1 +1,1 @@
-version = "0.0.0.post24.dev0+6f6bf0e"
+version = "0.0.0.post26.dev0+4a24f4a"

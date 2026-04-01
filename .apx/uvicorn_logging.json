@@ -22,6 +22,17 @@
     }
   },
   "loggers": {
+    "recommender_app": {
+      "handlers": [
+        "default"
+      ],
+      "level": "DEBUG",
+      "propagate": false
+    },
+    "databricks.sdk": {
+      "level": "INFO",
+      "propagate": true
+    },
     "uvicorn.error": {
       "level": "INFO",
       "propagate": true
@@ -39,17 +50,6 @@
       ],
       "level": "INFO",
       "propagate": false
-    },
-    "recommender_app": {
-      "handlers": [
-        "default"
-      ],
-      "level": "DEBUG",
-      "propagate": false
-    },
-    "databricks.sdk": {
-      "level": "INFO",
-      "propagate": true
     }
   },
   "root": {
