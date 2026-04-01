@@ -151,6 +151,11 @@
   display: none;
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 body {
   font-family: "Plus Jakarta Sans", sans-serif;
   background-color: #fcf9f8;
