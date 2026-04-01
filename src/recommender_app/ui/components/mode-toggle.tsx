@@ -9,7 +9,7 @@ export function ModeToggle({ mode, onModeChange }: ModeToggleProps) {
       <button
         className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
           mode === "known"
-            ? "bg-[#ad2c00] text-white"
+            ? "bg-brand text-white"
             : "text-[#5d4038]"
         }`}
         onClick={() => onModeChange("known")}
@@ -19,7 +19,7 @@ export function ModeToggle({ mode, onModeChange }: ModeToggleProps) {
       <button
         className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
           mode === "anonymous"
-            ? "bg-[#ad2c00] text-white"
+            ? "bg-brand text-white"
             : "text-[#5d4038]"
         }`}
         onClick={() => onModeChange("anonymous")}

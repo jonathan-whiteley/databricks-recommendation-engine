@@ -73,7 +73,7 @@ export function ProductGrid({ products, onAddToCart, cartSlugs }: ProductGridPro
           <span
             className={`px-6 py-2 rounded-full text-sm font-bold whitespace-nowrap cursor-pointer transition-colors ${
               activeCategory === null
-                ? "bg-[#ad2c00] text-white"
+                ? "bg-brand text-white"
                 : "bg-[#c8c6c5] text-[#1c1b1b] hover:bg-[#e5e2e1]"
             }`}
             onClick={() => setActiveCategory(null)}
@@ -85,7 +85,7 @@ export function ProductGrid({ products, onAddToCart, cartSlugs }: ProductGridPro
               key={cat}
               className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap cursor-pointer transition-colors ${
                 activeCategory === cat
-                  ? "bg-[#ad2c00] text-white"
+                  ? "bg-brand text-white"
                   : "bg-[#c8c6c5] text-[#1c1b1b] hover:bg-[#e5e2e1]"
               }`}
               onClick={() => setActiveCategory(cat)}
@@ -122,7 +122,7 @@ export function ProductGrid({ products, onAddToCart, cartSlugs }: ProductGridPro
                 <h3 className="font-headline font-black text-sm tracking-tight leading-tight">
                   {p.product_name}
                 </h3>
-                <span className="font-headline font-black text-sm text-[#ad2c00] shrink-0 ml-2">
+                <span className="font-headline font-black text-sm text-brand shrink-0 ml-2">
                   ${p.base_price.toFixed(2)}
                 </span>
               </div>
@@ -131,8 +131,8 @@ export function ProductGrid({ products, onAddToCart, cartSlugs }: ProductGridPro
               <button
                 className={`w-full font-headline font-black py-2.5 rounded-full text-xs uppercase tracking-widest transition-all mt-3 ${
                   inCart
-                    ? "bg-[#ad2c00] text-white"
-                    : "bg-[#f6f3f2] text-[#ad2c00] hover:bg-[#ad2c00] hover:text-white"
+                    ? "bg-brand text-white"
+                    : "bg-[#f6f3f2] text-brand hover:bg-brand hover:text-white"
                 }`}
                 onClick={() => onAddToCart(p.product_slug)}
               >

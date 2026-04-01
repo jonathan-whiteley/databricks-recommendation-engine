@@ -39,7 +39,7 @@ export function CartPanel({ items, onRemove, onClear }: CartPanelProps) {
         <h2 className="text-[32px] font-headline font-black tracking-tight">Your Order</h2>
         {items.length > 0 && (
           <button
-            className="text-xs font-bold uppercase tracking-widest text-[#ad2c00] hover:opacity-70 transition-opacity"
+            className="text-xs font-bold uppercase tracking-widest text-brand hover:opacity-70 transition-opacity"
             onClick={onClear}
           >
             Clear Cart
@@ -72,7 +72,7 @@ export function CartPanel({ items, onRemove, onClear }: CartPanelProps) {
                 </div>
                 {/* Remove */}
                 <button
-                  className="w-7 h-7 flex items-center justify-center text-stone-400 hover:text-[#ad2c00] transition-colors shrink-0"
+                  className="w-7 h-7 flex items-center justify-center text-stone-400 hover:text-brand transition-colors shrink-0"
                   onClick={() => onRemove(item.slug)}
                 >
                   <span className="material-symbols-outlined text-base">close</span>
@@ -94,7 +94,7 @@ export function CartPanel({ items, onRemove, onClear }: CartPanelProps) {
         <button
           className={`w-full font-headline font-black py-5 rounded-full text-lg uppercase tracking-wider transition-all mb-4 ${
             items.length > 0
-              ? "bg-[#ad2c00] text-white btn-shadow hover:brightness-110 active:scale-[0.98]"
+              ? "bg-brand text-white btn-shadow hover:brightness-110 active:scale-[0.98]"
               : "bg-[#eae7e7] text-stone-400 cursor-not-allowed"
           }`}
           disabled={items.length === 0}

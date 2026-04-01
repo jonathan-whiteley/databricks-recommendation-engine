@@ -5,6 +5,7 @@ import { UserSearch } from "@/components/user-search";
 import { ProductGrid } from "@/components/product-grid";
 import { CartPanel } from "@/components/cart-panel";
 import { Recommendations } from "@/components/recommendations";
+import { SettingsPanel } from "@/components/settings-panel";
 
 export const Route = createFileRoute("/")({ component: HomePage });
 
@@ -46,6 +47,27 @@ function HomePage() {
   const [source, setSource] = useState("");
   const [loading, setLoading] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [brandName, setBrandName] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("lakehouse-market-brand") || "{}").storeName; } catch { return null; }
+  } || "Lakehouse Market");
+  const [logoUrl, setLogoUrl] = useState<string | null>(() => {
+    try { return JSON.parse(localStorage.getItem("lakehouse-market-brand") || "{}").logoUrl; } catch { return null; }
+  });
+
+  // Apply saved brand color on mount
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("lakehouse-market-brand") || "{}");
+      if (saved.primaryColor) {
+        document.documentElement.style.setProperty("--brand-primary", saved.primaryColor);
+        const r = parseInt(saved.primaryColor.slice(1, 3), 16);
+        const g = parseInt(saved.primaryColor.slice(3, 5), 16);
+        const b = parseInt(saved.primaryColor.slice(5, 7), 16);
+        document.documentElement.style.setProperty("--brand-primary-light", `rgba(${r},${g},${b},0.12)`);
+        document.documentElement.style.setProperty("--brand-primary-shadow", `rgba(${r},${g},${b},0.4)`);
+      }
+    } catch {}
+  }, []);
 
   const productMap = Object.fromEntries(products.map((p) => [p.product_slug, p]));
   const productNames = Object.fromEntries(products.map((p) => [p.product_slug, p.product_name]));
@@ -142,16 +164,17 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-[#fcf9f8] text-[#1c1b1b]">
       {/* Top NavBar */}
-      <header className="w-full top-0 sticky z-50 bg-[#f6f3f2] flex justify-between items-center px-8 py-6">
-        <div className="flex items-center gap-12">
-          <h1 className="text-2xl font-black text-[#ad2c00] font-headline tracking-tighter uppercase">
-            Lakehouse Market
-          </h1>
+      <header className="w-full top-0 sticky z-50 bg-[#f6f3f2] flex justify-between items-center px-8 py-5">
+        <div className="flex items-center gap-8">
+          {logoUrl ? (
+            <img src={logoUrl} alt={brandName} className="h-8 w-auto max-w-[160px] object-contain" />
+          ) : (
+            <h1 className="text-2xl font-black text-brand font-headline tracking-tighter uppercase">
+              {brandName}
+            </h1>
+          )}
           <nav className="hidden md:flex items-center gap-8 font-headline tracking-tighter font-bold uppercase text-sm">
-            <a className="text-[#1c1b1b] hover:bg-stone-200 transition-colors px-2 py-1" href="#">
-              Menu
-            </a>
-            <a className="text-[#ad2c00] px-2 py-1" href="#">
+            <a className="text-brand px-2 py-1" href="#">
               Checkout
             </a>
           </nav>
@@ -161,6 +184,12 @@ function HomePage() {
           {mode === "known" && (
             <UserSearch users={users} selectedUser={selectedUser} onUserSelect={handleUserSelect} />
           )}
+          <SettingsPanel
+            onBrandChange={(s) => {
+              setBrandName(s.storeName);
+              setLogoUrl(s.logoUrl);
+            }}
+          />
         </div>
       </header>
 

@@ -26,7 +26,7 @@ export function Recommendations({
   if (loading) {
     return (
       <div className="p-10 bg-[#f5f2f0] flex-grow flex items-center justify-center gap-3">
-        <span className="material-symbols-outlined text-[#ad2c00] animate-spin">progress_activity</span>
+        <span className="material-symbols-outlined text-brand animate-spin">progress_activity</span>
         <span className="text-stone-400 text-sm font-medium">Getting recommendations...</span>
       </div>
     );
@@ -36,8 +36,8 @@ export function Recommendations({
     return (
       <div className="p-10 bg-[#f5f2f0] flex-grow">
         <div className="flex items-center gap-2 mb-4">
-          <span className="material-symbols-outlined text-sm text-[#ad2c00]">auto_awesome</span>
-          <h3 className="font-headline font-black text-sm uppercase tracking-widest text-[#ad2c00]">
+          <span className="material-symbols-outlined text-sm text-brand">auto_awesome</span>
+          <h3 className="font-headline font-black text-sm uppercase tracking-widest text-brand">
             Curated for You
           </h3>
         </div>
@@ -53,7 +53,7 @@ export function Recommendations({
     <div className="p-10 bg-[#f5f2f0] flex-grow">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-headline font-black text-sm uppercase tracking-widest flex items-center gap-2 text-[#ad2c00]">
+        <h3 className="font-headline font-black text-sm uppercase tracking-widest flex items-center gap-2 text-brand">
           <span className="material-symbols-outlined text-sm">auto_awesome</span>
           Curated for {displayName}
         </h3>
@@ -93,7 +93,7 @@ export function Recommendations({
                     ${(productPrices[rec.product] ?? 0).toFixed(2)}
                   </span>
                   <button
-                    className="bg-[#ffe8e1] text-[#ad2c00] px-4 py-1.5 rounded-full text-xs font-black tracking-tight hover:bg-[#ffd5c9] transition-colors"
+                    className="bg-brand-light text-brand px-4 py-1.5 rounded-full text-xs font-black tracking-tight hover:opacity-80 transition-all"
                     onClick={() => onAddToCart(rec.product)}
                   >
                     + Add

@@ -15,7 +15,7 @@ interface UserSearchProps {
 export function UserSearch({ users, selectedUser, onUserSelect }: UserSearchProps) {
   return (
     <div className="flex items-center gap-3 bg-[#f6f3f2] px-4 py-2 rounded-full cursor-pointer hover:bg-[#eae7e7] transition-colors">
-      <span className="material-symbols-outlined text-[#ad2c00]">person_check</span>
+      <span className="material-symbols-outlined text-brand">person_check</span>
       <Select value={selectedUser ?? ""} onValueChange={onUserSelect}>
         <SelectTrigger className="border-none bg-transparent shadow-none p-0 h-auto min-w-[140px] font-bold font-[Plus_Jakarta_Sans] text-sm focus:ring-0">
           <SelectValue placeholder="Select user..." />
