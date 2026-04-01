@@ -67,24 +67,34 @@ from mlxtend.frequent_patterns import fpgrowth as mlx_fpgrowth, association_rule
 # Split into train/test
 train_sdf, test_sdf = sdf_cleaned.randomSplit([0.8, 0.2], seed=42)
 
+import time
+
 # Convert train set to pandas list of transactions
+print(f"Converting {train_sdf.count():,} train orders to pandas...")
+t0 = time.time()
 train_pd = train_sdf.select("order_product_list").toPandas()
 transactions = train_pd["order_product_list"].tolist()
+print(f"  Done in {time.time()-t0:.1f}s. One-hot encoding {len(transactions):,} transactions...")
 
-# One-hot encode transactions
+t0 = time.time()
 te = TransactionEncoder()
 te_array = te.fit(transactions).transform(transactions)
 df_encoded = pd.DataFrame(te_array, columns=te.columns_)
+print(f"  Encoded: {df_encoded.shape[0]:,} rows x {df_encoded.shape[1]} columns in {time.time()-t0:.1f}s")
 
 # Run fpgrowth
 min_support = min_transactions / num_transactions
+print(f"Running FPGrowth (min_support={min_support:.5f})...")
+t0 = time.time()
 frequent_itemsets = mlx_fpgrowth(df_encoded, min_support=min_support, use_colnames=True)
-print(f"Found {len(frequent_itemsets):,} frequent itemsets")
+print(f"  Found {len(frequent_itemsets):,} frequent itemsets in {time.time()-t0:.1f}s")
 
 # Generate association rules
+print(f"Generating association rules (min_confidence={min_confidence})...")
+t0 = time.time()
 rules_df = association_rules(frequent_itemsets, metric="confidence", min_threshold=min_confidence)
 rules_count = len(rules_df)
-print(f"Generated {rules_count:,} association rules")
+print(f"  Generated {rules_count:,} association rules in {time.time()-t0:.1f}s")
 rules_df.sort_values(["confidence", "lift"], ascending=False).head(20)
 
 # COMMAND ----------
@@ -172,11 +182,20 @@ test_data = spark.read.table(f"{catalog}.{schema}.mba_test_dataset").filter(
 )
 test_pd = test_data.select("order_id", "order_product_list").toPandas()
 
+# Sample test set for faster evaluation
+max_eval = 3000
+if len(test_pd) > max_eval:
+    print(f"Sampling {max_eval:,} of {len(test_pd):,} test orders for evaluation...")
+    test_eval = test_pd.sample(n=max_eval, random_state=42)
+else:
+    test_eval = test_pd
+
 # For each test order: remove last item as "added", use rest as cart
 hits = 0
 total = 0
+t0 = time.time()
 
-for _, row in test_pd.iterrows():
+for i, (_, row) in enumerate(test_eval.iterrows()):
     items = row["order_product_list"]
     cart = items[:-1]
     added = items[-1]
@@ -188,8 +207,14 @@ for _, row in test_pd.iterrows():
         hits += 1
     total += 1
 
+    if (i + 1) % 500 == 0:
+        elapsed = time.time() - t0
+        rate = (i + 1) / elapsed
+        remaining = (len(test_eval) - i - 1) / rate
+        print(f"  Evaluated {i+1:,}/{len(test_eval):,} ({hits}/{total} hits) — {elapsed:.0f}s elapsed, ~{remaining:.0f}s remaining")
+
 hit_rate = hits / total if total > 0 else 0.0
-print(f"Hit@{k}: {hit_rate:.4f} ({hits}/{total})")
+print(f"Hit@{k}: {hit_rate:.4f} ({hits}/{total}) in {time.time()-t0:.1f}s")
 
 # COMMAND ----------
 

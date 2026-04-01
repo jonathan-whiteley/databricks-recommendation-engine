@@ -89,9 +89,13 @@ def preprocess_pipeline(dataset_sdf):
     return sparse_matrix, user_map_df, item_map_df, grouped
 
 
+import time
+
+print("Preprocessing training data...")
+t0 = time.time()
 sparse_train, user_map, item_map, train_ratings = preprocess_pipeline(train_sdf)
-print(f"ALS train: {sparse_train.nnz:,} user-item pairs")
-print(f"Users: {len(user_map):,} | Items: {len(item_map):,}")
+print(f"  ALS train: {sparse_train.nnz:,} user-item pairs in {time.time()-t0:.1f}s")
+print(f"  Users: {len(user_map):,} | Items: {len(item_map):,}")
 
 # COMMAND ----------
 
@@ -168,20 +172,30 @@ def objective(trial, parent_run_id, k=5):
             "rank": trial.suggest_int("rank", 1, 100),
             "maxIter": trial.suggest_int("maxIter", 1, 10),
         }
+        t0 = time.time()
         model = train_als(sparse_train, rank=params["rank"], maxIter=params["maxIter"])
+        train_time = time.time() - t0
+
+        t0 = time.time()
         avg_hit = evaluate_model(model, sparse_train, test_linked, k=k)
+        eval_time = time.time() - t0
+
+        print(f"  Trial {trial.number + 1}/{n_trials}: rank={params['rank']}, maxIter={params['maxIter']} -> Hit@{k}={avg_hit:.4f} (train {train_time:.1f}s, eval {eval_time:.1f}s)")
 
         mlflow.log_params(params)
         mlflow.log_metric("hit_at_k", avg_hit)
         return avg_hit
 
 
+print(f"Starting Optuna HPO ({n_trials} trials)...")
+hpo_start = time.time()
 with mlflow.start_run(run_name="als_hpo") as parent_run:
     obj = partial(objective, parent_run_id=parent_run.info.run_id, k=k)
     study = optuna.create_study(direction="maximize")
     study.optimize(obj, n_trials=n_trials)
 
     best = study.best_trial
+    print(f"\nHPO complete in {time.time()-hpo_start:.1f}s")
     print(f"Best Hit@{k}: {best.value:.4f}")
     print(f"Best params: rank={best.params['rank']}, maxIter={best.params['maxIter']}")
 
@@ -191,8 +205,13 @@ with mlflow.start_run(run_name="als_hpo") as parent_run:
 import json
 
 with mlflow.start_run(run_name="als_final", nested=True, parent_run_id=parent_run.info.run_id):
+    print("Preprocessing full dataset for final model...")
+    t0 = time.time()
     sparse_full, user_map_full, item_map_full, full_ratings = preprocess_pipeline(sdf_cleaned)
+    print(f"  Done in {time.time()-t0:.1f}s. Training final model (rank={best.params['rank']}, maxIter={best.params['maxIter']})...")
+    t0 = time.time()
     final_model = train_als(sparse_full, rank=best.params["rank"], maxIter=best.params["maxIter"])
+    print(f"  Final model trained in {time.time()-t0:.1f}s")
 
     # Save mappings as parquet artifacts
     user_map_full.to_parquet("/tmp/als_user_mapping.parquet", index=False)
@@ -224,27 +243,30 @@ from pyspark.sql import Row
 # Build reverse mapping from item index to slug
 idx_to_item = dict(zip(item_map_full["item_id"], item_map_full["item"]))
 
-# Generate recommendations for all users
+# Batch recommend for all users at once (much faster than row-by-row)
+print(f"Generating top-{k} recommendations for {len(user_map_full):,} users...")
+t0 = time.time()
+
+all_user_ids = np.arange(len(user_map_full))
+all_item_ids, all_scores = final_model.recommend(
+    all_user_ids, sparse_full[all_user_ids], N=k, filter_already_liked_items=False
+)
+
 lookup_rows = []
-for _, user_row in user_map_full.iterrows():
-    user_idx = user_row["user_id_int"]
+for i, user_row in user_map_full.iterrows():
     user_id = user_row["user"]
-
-    # Don't filter already-liked items here; the app handles cart filtering.
-    # With synthetic data, users interact with many products, so filtering
-    # leaves few/no valid recommendations.
-    item_ids, scores = final_model.recommend(
-        user_idx, sparse_full[user_idx], N=k, filter_already_liked_items=False
-    )
-
     recs = []
-    for item_idx, score in zip(item_ids, scores):
+    for item_idx, score in zip(all_item_ids[i], all_scores[i]):
         slug = idx_to_item.get(int(item_idx))
         if slug:
             recs.append({"product": slug, "score": float(score)})
-
     if recs:
         lookup_rows.append(Row(user_id=user_id, recommendations=json.dumps(recs)))
+
+    if (i + 1) % 500 == 0:
+        print(f"  Processed {i+1:,}/{len(user_map_full):,} users...")
+
+print(f"  Generated recs for {len(lookup_rows):,} users in {time.time()-t0:.1f}s")
 
 als_lookup = spark.createDataFrame(lookup_rows)
 als_lookup.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(
