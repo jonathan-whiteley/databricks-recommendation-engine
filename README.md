@@ -8,10 +8,10 @@ A configurable, demo-ready product recommendation system built on Databricks. Ge
    ```bash
    git clone https://github.com/jonathan-whiteley/databricks-recommendation-engine.git
    cd databricks-recommendation-engine
-   # Edit config.yaml: set your catalog, schema, and vertical
    ```
+   Edit `config.yaml`: set your `catalog`, `schema`, and `vertical` (qsr, retail, or grocery).
 
-2. **Deploy:**
+2. **Deploy the pipeline:**
    ```bash
    databricks bundle deploy
    ```
@@ -20,13 +20,47 @@ A configurable, demo-ready product recommendation system built on Databricks. Ge
    ```bash
    databricks bundle run recommender_training_pipeline
    ```
+   This runs all 4 notebooks in sequence (~14 min): generates synthetic data, cleans it, trains MBA and ALS models, and writes recommendation lookup tables to Delta.
 
-4. **Set up Lakebase:** Create tables (`product_catalog`, `mba_recommendations`, `als_recommendations`, `user_profiles`) in your Lakebase instance and load data from the Delta tables produced by the pipeline.
+4. **Set up Lakebase:**
 
-5. **Start the app:**
+   Create a Lakebase instance (or use an existing one):
+   ```bash
+   databricks database create-database-instance <instance-name> --capacity CU_1
+   ```
+
+   Connect and create the tables:
+   ```sql
+   CREATE TABLE IF NOT EXISTS product_catalog (
+       product_id TEXT PRIMARY KEY, product_name TEXT, product_slug TEXT,
+       category TEXT, base_price DOUBLE PRECISION, popularity_weight DOUBLE PRECISION
+   );
+   CREATE TABLE IF NOT EXISTS mba_recommendations (
+       product_slug TEXT PRIMARY KEY, recommendations JSONB
+   );
+   CREATE TABLE IF NOT EXISTS als_recommendations (
+       user_id TEXT PRIMARY KEY, recommendations JSONB
+   );
+   CREATE TABLE IF NOT EXISTS user_profiles (
+       user_id TEXT PRIMARY KEY, primary_store TEXT,
+       store_visits INTEGER, total_orders INTEGER
+   );
+   ```
+
+   Load data from Delta into Lakebase using the Databricks SDK and SQL warehouse (see the loading script pattern in the repo docs), or set up Lakebase synced tables if your workspace supports UC catalog registration.
+
+5. **Install app dependencies:**
+   ```bash
+   uv sync          # Python dependencies
+   bun install      # JavaScript dependencies
+   apx components add tabs select badge card progress input button
+   ```
+
+6. **Start the app:**
    ```bash
    LAKEBASE_INSTANCE_NAME=<your-instance> apx dev start
    ```
+   Open http://localhost:9000 in your browser.
 
 ## Configuration
 
