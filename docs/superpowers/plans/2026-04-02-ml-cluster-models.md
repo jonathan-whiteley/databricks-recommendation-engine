@@ -463,8 +463,8 @@ Update the `market_basket` and `collaborative_filter` tasks in `databricks.yml`:
           depends_on:
             - task_key: data_preparation
           new_cluster:
-            spark_version: "15.4.x-ml-scala2.12"
-            node_type_id: "i3.xlarge"
+            spark_version: "17.3.x-scala2.13"
+            node_type_id: "Standard_E4ds_v4"
             num_workers: 2
             data_security_mode: SINGLE_USER
 
@@ -474,8 +474,8 @@ Update the `market_basket` and `collaborative_filter` tasks in `databricks.yml`:
           depends_on:
             - task_key: data_preparation
           new_cluster:
-            spark_version: "15.4.x-ml-scala2.12"
-            node_type_id: "i3.xlarge"
+            spark_version: "17.3.x-scala2.13"
+            node_type_id: "Standard_E4ds_v4"
             num_workers: 2
             data_security_mode: SINGLE_USER
 ```
