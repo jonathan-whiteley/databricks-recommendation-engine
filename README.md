@@ -10,13 +10,15 @@ A configurable, demo-ready product recommendation system built on Databricks. Ge
    cd databricks-recommendation-engine
    ```
    Edit `config.yaml`: set your `catalog`, `schema`, and `vertical` (qsr, retail, or grocery).
-   Edit `app.yml`: set `LAKEBASE_INSTANCE_NAME` to your Lakebase instance.
 
-2. **Deploy everything** (pipeline + app):
+   Edit `databricks.yml`: set the `lakebase_instance` variable to your Lakebase instance name.
+
+2. **Build and deploy** (pipeline + app):
    ```bash
    apx build                      # Build the frontend + Python wheel
    databricks bundle deploy       # Deploy notebooks, job, and app to workspace
    ```
+   This deploys the training job, the app, and configures the Lakebase resource binding automatically.
 
 3. **Run the training pipeline:**
    ```bash
@@ -26,12 +28,12 @@ A configurable, demo-ready product recommendation system built on Databricks. Ge
 
 4. **Set up Lakebase:**
 
-   Create a Lakebase instance (or use an existing one):
+   Create a Lakebase instance if you don't have one:
    ```bash
    databricks database create-database-instance <instance-name> --capacity CU_1
    ```
 
-   Connect and create the tables:
+   Connect to the instance and create the tables:
    ```sql
    CREATE TABLE IF NOT EXISTS product_catalog (
        product_id TEXT PRIMARY KEY, product_name TEXT, product_slug TEXT,
@@ -51,11 +53,20 @@ A configurable, demo-ready product recommendation system built on Databricks. Ge
 
    Load data from Delta into Lakebase using the Databricks SDK and SQL warehouse, or set up Lakebase synced tables if your workspace supports UC catalog registration.
 
+   Grant the app's service principal access to the tables:
+   ```sql
+   -- Find the SP ID from: databricks apps get <app-name> (the "id" field)
+   GRANT SELECT ON product_catalog TO "<sp-id>";
+   GRANT SELECT ON mba_recommendations TO "<sp-id>";
+   GRANT SELECT ON als_recommendations TO "<sp-id>";
+   GRANT SELECT ON user_profiles TO "<sp-id>";
+   ```
+
 5. **Start the app:**
    ```bash
-   databricks bundle run recommender_app    # Deploy and start the Databricks App
+   databricks bundle run recommender_app
    ```
-   The app URL will be shown in the output.
+   The app URL will be shown in the output. Open it in your browser (requires Databricks login).
 
 ### Local Development
 
@@ -66,6 +77,16 @@ bun install                # JavaScript dependencies
 apx components add tabs select badge card progress input button
 LAKEBASE_INSTANCE_NAME=<your-instance> apx dev start   # http://localhost:9000
 ```
+
+## What Gets Deployed
+
+The Databricks Asset Bundle (`databricks.yml`) manages everything:
+
+| Resource | Type | Description |
+|----------|------|-------------|
+| Training Pipeline | Job | 4-notebook pipeline: data gen, prep, MBA, ALS |
+| Demo App | App | React + FastAPI checkout experience |
+| Lakebase Binding | App Resource | Connects the app to Lakebase with OAuth |
 
 ## Configuration
 
