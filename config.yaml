@@ -34,3 +34,6 @@ recommendation_k: 5
 
 # MLflow experiment paths
 mlflow_experiment_root: /Users/jonathan.whiteley@databricks.com/recommender-accelerator
+
+# Lakebase instance name (must exist before running pipeline)
+lakebase_instance: jdub-lakebase-db-instance
