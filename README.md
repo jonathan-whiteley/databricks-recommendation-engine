@@ -24,36 +24,17 @@ A configurable, demo-ready product recommendation system built on Databricks. Ge
    ```bash
    databricks bundle run recommender_training_pipeline
    ```
-   Runs all 4 notebooks (~20 min): generates synthetic data, cleans it, trains MBA and ALS models, writes recommendation lookup tables to Delta. Notebooks 02-03 provision single-user ML clusters automatically.
+   Runs all 5 notebooks (~20 min): generates synthetic data, cleans it, trains MBA and ALS models, creates Lakebase tables, and syncs all data automatically. Notebooks 02-03 provision single-user ML clusters.
 
-4. **Set up Lakebase:**
+4. **Pre-requisites (one-time):**
 
    Create a Lakebase instance if you don't have one:
    ```bash
    databricks database create-database-instance <instance-name> --capacity CU_1
    ```
+   Set the instance name in `config.yaml` (`lakebase_instance` field) and `databricks.yml` (`lakebase_instance` variable).
 
-   Connect to the instance and create the tables:
-   ```sql
-   CREATE TABLE IF NOT EXISTS product_catalog (
-       product_id TEXT PRIMARY KEY, product_name TEXT, product_slug TEXT,
-       category TEXT, base_price DOUBLE PRECISION, popularity_weight DOUBLE PRECISION
-   );
-   CREATE TABLE IF NOT EXISTS mba_recommendations (
-       product_slug TEXT PRIMARY KEY, recommendations JSONB
-   );
-   CREATE TABLE IF NOT EXISTS als_recommendations (
-       user_id TEXT PRIMARY KEY, recommendations JSONB
-   );
-   CREATE TABLE IF NOT EXISTS user_profiles (
-       user_id TEXT PRIMARY KEY, primary_store TEXT,
-       store_visits INTEGER, total_orders INTEGER
-   );
-   ```
-
-   Load data from Delta into Lakebase using the Databricks SDK and SQL warehouse, or set up Lakebase synced tables if your workspace supports UC catalog registration.
-
-   Grant the app's service principal access to the tables:
+   After the first pipeline run, grant the app's service principal access:
    ```sql
    -- Find the SP ID from: databricks apps get <app-name> (the "id" field)
    GRANT SELECT ON product_catalog TO "<sp-id>";
@@ -84,7 +65,7 @@ The Databricks Asset Bundle (`databricks.yml`) manages everything:
 
 | Resource | Type | Description |
 |----------|------|-------------|
-| Training Pipeline | Job | 4-notebook pipeline: data gen, prep, MBA, ALS |
+| Training Pipeline | Job | 5-notebook pipeline: data gen, prep, MBA, ALS, Lakebase sync |
 | Demo App | App | React + FastAPI checkout experience |
 | Lakebase Binding | App Resource | Connects the app to Lakebase with OAuth |
 
@@ -102,6 +83,7 @@ Edit `config.yaml` to customize:
 | `recommendation_k` | `5` | Top-k recommendations to generate |
 | `als_hpo_trials` | `20` | Optuna hyperparameter search trials |
 | `mba_min_transactions` | `1000` | Minimum transaction count for FPGrowth support threshold |
+| `lakebase_instance` | `jdub-lakebase-db-instance` | Lakebase PostgreSQL instance name |
 
 ## Using Your Own Data
 
@@ -113,8 +95,8 @@ Edit `config.yaml` to customize:
 ## Architecture
 
 ```
-config.yaml -> [00 Data Gen] -> [01 Data Prep] -> [02 MBA] -----> Lakebase -> App
-                                                -> [03 ALS] ----> Lakebase -> App
+config.yaml -> [00 Data Gen] -> [01 Data Prep] -> [02 MBA] --\
+                                                -> [03 ALS] --+--> [04 Lakebase Sync] -> App
 ```
 
 - **Notebooks 00-01** run on serverless compute
@@ -164,6 +146,7 @@ With default settings (500K orders, 10K users, 20 HPO trials) on single-user ML 
 | Data Preparation | Serverless | ~2 min |
 | Market Basket Analysis | ML Cluster | ~5 min (+cluster startup) |
 | Collaborative Filtering | ML Cluster | ~10 min (+cluster startup) |
+| Lakebase Sync | Serverless | ~1 min |
 | **Total** | | **~20 min** |
 
 > **Note**: Cluster cold start adds ~5-10 min on first run. Both ML tasks share the same cluster spec so subsequent runs reuse a warm cluster. Serverless fallback notebooks (`*_serverless.py`) are available for workspaces without classic compute access.
