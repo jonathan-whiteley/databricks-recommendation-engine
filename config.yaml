@@ -21,15 +21,15 @@ exclude_items: []
 
 # Data generation parameters (only used by notebook 00)
 product_count: 50
-order_count: 50000
-user_count: 2000
+order_count: 500000
+user_count: 10000
 store_count: 50
 seed: 42
 
 # Model parameters
-mba_min_transactions: 100
+mba_min_transactions: 1000
 mba_min_confidence: 0.0
-als_hpo_trials: 5
+als_hpo_trials: 20
 recommendation_k: 5
 
 # MLflow experiment paths
