@@ -54,6 +54,13 @@ resources:
             num_workers: 2
             data_security_mode: SINGLE_USER
 
+        - task_key: lakebase_sync
+          notebook_task:
+            notebook_path: ./notebooks/04_lakebase_sync.py
+          depends_on:
+            - task_key: market_basket
+            - task_key: collaborative_filter
+
       # Schedule OFF by default. Customer enables when ready.
       # schedule:
       #   quartz_cron_expression: "0 0 6 ? * MON"
@@ -76,4 +83,4 @@ targets:
     default: true
     mode: development
     workspace:
-      profile: DEFAULT
+      profile: azure
