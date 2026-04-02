@@ -17,6 +17,12 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/debug/env")
+def debug_env():
+    """Debug endpoint: show all env vars (remove in production)."""
+    return {k: v[:30] + "..." if len(v) > 30 else v for k, v in sorted(os.environ.items())}
+
+
 # Serve built frontend in production.
 # APX builds the frontend into __dist__/ inside the package.
 _dist_dir = Path(__file__).parent.parent / "__dist__"

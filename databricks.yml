@@ -54,6 +54,12 @@ resources:
       name: "recommender-accelerator-${bundle.target}"
       description: "Lakehouse Market - Product recommendation demo app powered by MBA + ALS models"
       source_code_path: ./.build
+      resources:
+        - name: "lakebase"
+          database:
+            instance_name: ${var.lakebase_instance}
+            database_name: "databricks_postgres"
+            permission: "CAN_CONNECT_AND_CREATE"
 
 targets:
   dev:

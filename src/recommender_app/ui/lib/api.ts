@@ -55,6 +55,58 @@ export interface ValidationError {
     msg: string;
     type: string;
 }
+export const debug_env_api_debug_env_get = async (options?: RequestInit): Promise<{
+    data: unknown;
+}> =>{
+    const res = await fetch("/api/debug/env", {
+        ...options,
+        method: "GET"
+    });
+    if (!res.ok) {
+        const body = await res.text();
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(body);
+        } catch  {
+            parsed = body;
+        }
+        throw new ApiError(res.status, res.statusText, parsed);
+    }
+    return {
+        data: await res.json()
+    };
+};
+export const debug_env_api_debug_env_getKey = ()=>{
+    return [
+        "/api/debug/env"
+    ] as const;
+};
+export function useDebug_env_api_debug_env_get<TData = {
+    data: unknown;
+}>(options?: {
+    query?: Omit<UseQueryOptions<{
+        data: unknown;
+    }, ApiError, TData>, "queryKey" | "queryFn">;
+}) {
+    return useQuery({
+        queryKey: debug_env_api_debug_env_getKey(),
+        queryFn: ()=>debug_env_api_debug_env_get(),
+        ...options?.query
+    });
+}
+export function useDebug_env_api_debug_env_getSuspense<TData = {
+    data: unknown;
+}>(options?: {
+    query?: Omit<UseSuspenseQueryOptions<{
+        data: unknown;
+    }, ApiError, TData>, "queryKey" | "queryFn">;
+}) {
+    return useSuspenseQuery({
+        queryKey: debug_env_api_debug_env_getKey(),
+        queryFn: ()=>debug_env_api_debug_env_get(),
+        ...options?.query
+    });
+}
 export const health_api_health_get = async (options?: RequestInit): Promise<{
     data: unknown;
 }> =>{
