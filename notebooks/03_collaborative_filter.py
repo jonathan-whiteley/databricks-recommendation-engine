@@ -309,7 +309,7 @@ t0 = time.time()
 
 # recommendForAllUsers returns: user_id_int, recommendations (array<struct<item_id, rating>>)
 # filter_already_liked_items=False: app layer handles cart filtering at serve time
-raw_recs = final_model.recommendForAllUsers(k, filterAlreadyLikedItems=False)
+raw_recs = final_model.recommendForAllUsers(k)
 
 # Explode recommendations array -> one row per (user_id_int, item_id, score)
 recs_exploded = (
