@@ -24,7 +24,7 @@ A configurable, demo-ready product recommendation system built on Databricks. Ge
    ```bash
    databricks bundle run recommender_training_pipeline
    ```
-   Runs all 4 notebooks (~14 min): generates synthetic data, cleans it, trains MBA and ALS models, writes recommendation lookup tables to Delta.
+   Runs all 4 notebooks (~20 min): generates synthetic data, cleans it, trains MBA and ALS models, writes recommendation lookup tables to Delta. Notebooks 02-03 provision single-user ML clusters automatically.
 
 4. **Set up Lakebase:**
 
@@ -97,11 +97,11 @@ Edit `config.yaml` to customize:
 | `vertical` | `qsr` | Industry vertical: `qsr`, `retail`, `grocery` |
 | `catalog` | `jdub_demo` | Unity Catalog catalog name |
 | `schema` | `recommender` | Schema for all tables |
-| `order_count` | `50000` | Number of synthetic orders |
-| `user_count` | `2000` | Number of synthetic users |
+| `order_count` | `500000` | Number of synthetic orders |
+| `user_count` | `10000` | Number of synthetic users |
 | `recommendation_k` | `5` | Top-k recommendations to generate |
-| `als_hpo_trials` | `5` | Optuna hyperparameter search trials |
-| `mba_min_transactions` | `100` | Minimum transaction count for FPGrowth support threshold |
+| `als_hpo_trials` | `20` | Optuna hyperparameter search trials |
+| `mba_min_transactions` | `1000` | Minimum transaction count for FPGrowth support threshold |
 
 ## Using Your Own Data
 
@@ -117,17 +117,19 @@ config.yaml -> [00 Data Gen] -> [01 Data Prep] -> [02 MBA] -----> Lakebase -> Ap
                                                 -> [03 ALS] ----> Lakebase -> App
 ```
 
-- **All notebooks run on serverless compute** (no ML clusters required)
-- **Notebook 02** uses mlxtend (single-node FPGrowth) for market basket analysis
-- **Notebook 03** uses the implicit library (single-node ALS) with Optuna HPO
+- **Notebooks 00-01** run on serverless compute
+- **Notebooks 02-03** run on single-user ML clusters (auto-provisioned by the job)
+- **Notebook 02** uses PySpark FPGrowth (distributed) for market basket analysis
+- **Notebook 03** uses PySpark ALS (distributed) with Optuna HPO
+- **Serverless fallback** notebooks available as `*_serverless.py` (mlxtend + implicit)
 - **Serving**: Pre-computed lookup tables in Lakebase (low-latency PostgreSQL)
 - **App**: React + FastAPI via Databricks Apps (APX), branded as "Lakehouse Market"
 
 ## Models
 
-**Market Basket Analysis (mlxtend FPGrowth):** Finds product co-purchase patterns from transaction data. Generates association rules used to recommend items based on what's currently in the cart. Powers the anonymous/guest experience.
+**Market Basket Analysis (PySpark FPGrowth):** Finds product co-purchase patterns from transaction data using distributed FPGrowth. Generates association rules used to recommend items based on what's currently in the cart. Powers the anonymous/guest experience.
 
-**Collaborative Filtering (implicit ALS):** Learns latent user preferences from order history using Alternating Least Squares with implicit feedback. Hyperparameter-tuned via Optuna. Powers personalized recommendations for known users.
+**Collaborative Filtering (PySpark ALS):** Learns latent user preferences from order history using distributed Alternating Least Squares with implicit feedback. Hyperparameter-tuned via Optuna. Powers personalized recommendations for known users.
 
 Both models log experiments and metrics to MLflow.
 
@@ -154,12 +156,14 @@ Add your own by creating a new Python file in `notebooks/verticals/` following t
 
 ## Pipeline Runtime
 
-With default settings (50K orders, 2K users, 5 HPO trials):
+With default settings (500K orders, 10K users, 20 HPO trials) on single-user ML clusters (Standard_E4ds_v4, 2 workers):
 
-| Task | Duration |
-|------|----------|
-| Data Generation | ~1 min |
-| Data Preparation | ~1 min |
-| Market Basket Analysis | ~9 min |
-| Collaborative Filtering | ~3 min |
-| **Total** | **~14 min** |
+| Task | Compute | Duration |
+|------|---------|----------|
+| Data Generation | Serverless | ~2 min |
+| Data Preparation | Serverless | ~2 min |
+| Market Basket Analysis | ML Cluster | ~5 min (+cluster startup) |
+| Collaborative Filtering | ML Cluster | ~10 min (+cluster startup) |
+| **Total** | | **~20 min** |
+
+> **Note**: Cluster cold start adds ~5-10 min on first run. Both ML tasks share the same cluster spec so subsequent runs reuse a warm cluster. Serverless fallback notebooks (`*_serverless.py`) are available for workspaces without classic compute access.
