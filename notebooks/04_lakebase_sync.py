@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %pip install psycopg2-binary
+# MAGIC %pip install psycopg2-binary pyyaml
 
 # COMMAND ----------
 
