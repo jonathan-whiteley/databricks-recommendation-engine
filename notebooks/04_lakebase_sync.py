@@ -1,5 +1,9 @@
 # Databricks notebook source
-# MAGIC %pip install psycopg2-binary pyyaml
+# MAGIC %pip install psycopg2-binary pyyaml "databricks-sdk>=0.81.0"
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
