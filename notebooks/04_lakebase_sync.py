@@ -33,9 +33,9 @@ catalog = cfg["catalog"]
 schema = cfg["schema"]
 lakebase_instance = cfg["lakebase_instance"]
 
-w = WorkspaceClient()
-instance = w.database.get_database_instance(name=lakebase_instance)
-cred = w.database.generate_database_credential(
+ws = WorkspaceClient()
+instance = ws.database.get_database_instance(name=lakebase_instance)
+cred = ws.database.generate_database_credential(
     request_id=str(uuid.uuid4()),
     instance_names=[lakebase_instance],
 )
@@ -44,7 +44,7 @@ conn_params = {
     "host": instance.read_write_dns,
     "port": 5432,
     "dbname": "databricks_postgres",
-    "user": w.current_user.me().user_name,
+    "user": ws.current_user.me().user_name,
     "password": cred.token,
     "sslmode": "require",
 }
@@ -246,10 +246,10 @@ full_app_name = f"{app_name}-{target}"
 
 print(f"Looking up service principal for app: {full_app_name}")
 try:
-    app_info = w.apps.get(full_app_name)
+    app_info = ws.apps.get(full_app_name)
     sp_id = app_info.service_principal_id
     # Lakebase roles use the SP's application_id (UUID), not the display name
-    sp = w.service_principals.get(sp_id)
+    sp = ws.service_principals.get(sp_id)
     sp_role = sp.application_id
     print(f"  Found SP: {sp.display_name} (application_id={sp_role})")
 
