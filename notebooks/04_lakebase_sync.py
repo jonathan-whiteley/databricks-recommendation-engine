@@ -247,14 +247,17 @@ full_app_name = f"{app_name}-{target}"
 print(f"Looking up service principal for app: {full_app_name}")
 try:
     app_info = w.apps.get(full_app_name)
-    sp_name = app_info.service_principal_name
-    print(f"  Found SP: {sp_name}")
+    sp_id = app_info.service_principal_id
+    # Lakebase roles use the SP's application_id (UUID), not the display name
+    sp = w.service_principals.get(sp_id)
+    sp_role = sp.application_id
+    print(f"  Found SP: {sp.display_name} (application_id={sp_role})")
 
     conn = psycopg2.connect(**conn_params)
     cur = conn.cursor()
     tables = ["product_catalog", "mba_recommendations", "als_recommendations", "user_profiles"]
     for table in tables:
-        cur.execute(f'GRANT SELECT ON {table} TO "{sp_name}"')
+        cur.execute(f'GRANT SELECT ON {table} TO "{sp_role}"')
         print(f"  Granted SELECT on {table}")
     conn.commit()
     cur.close()
