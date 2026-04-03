@@ -235,6 +235,33 @@ print(f"  Synced {n} user profiles in {time.time()-t0:.1f}s")
 
 # COMMAND ----------
 
+# DBTITLE 1,Grant app service principal access to tables
+app_name = cfg.get("app_name", "recommender-accelerator")
+target = dbutils.widgets.get("__bundle_target") if "__bundle_target" in [w.name for w in dbutils.widgets.getAll()] else "dev"
+full_app_name = f"{app_name}-{target}"
+
+print(f"Looking up service principal for app: {full_app_name}")
+try:
+    app_info = w.apps.get(full_app_name)
+    sp_name = app_info.service_principal_name
+    print(f"  Found SP: {sp_name}")
+
+    conn = psycopg2.connect(**conn_params)
+    cur = conn.cursor()
+    tables = ["product_catalog", "mba_recommendations", "als_recommendations", "user_profiles"]
+    for table in tables:
+        cur.execute(f'GRANT SELECT ON {table} TO "{sp_name}"')
+        print(f"  Granted SELECT on {table}")
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("All grants applied")
+except Exception as e:
+    print(f"  Warning: Could not grant SP access: {e}")
+    print("  You may need to run GRANT SELECT manually (see README)")
+
+# COMMAND ----------
+
 # DBTITLE 1,Verify Lakebase sync
 print("\n=== Lakebase Sync Complete ===")
 conn = psycopg2.connect(**conn_params)

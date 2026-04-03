@@ -37,3 +37,6 @@ mlflow_experiment_root: /Users/jonathan.whiteley@databricks.com/recommender-acce
 
 # Lakebase instance name (must exist before running pipeline)
 lakebase_instance: jdub-lakebase-db-instance
+
+# App name (used to auto-grant Lakebase permissions to the app's service principal)
+app_name: recommender-accelerator
