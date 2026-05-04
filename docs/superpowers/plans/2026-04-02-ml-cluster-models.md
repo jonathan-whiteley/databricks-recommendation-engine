@@ -1,3 +1,87 @@
+# ML Cluster Models Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Rewrite notebooks 02 and 03 to use PySpark ML (FPGrowth + ALS) on single-user ML clusters for better performance and higher model fidelity, while keeping the serverless versions as a fallback.
+
+**Architecture:** Notebooks 00-01 stay on serverless. Notebooks 02-03 switch from single-node Python libraries (mlxtend/implicit) to distributed PySpark ML (FPGrowth/ALS). The bundle config adds ML cluster definitions for these two tasks. All output table schemas stay identical so the app works unchanged.
+
+**Tech Stack:** PySpark ML (FPGrowth, ALS), Optuna, MLflow, Databricks ML Runtime 15.4+
+
+**Spec:** Based on the original KFC notebooks at `/tmp/recommender_model/Recommender Model/`
+
+---
+
+## Why ML Clusters
+
+| Aspect | Serverless (current) | ML Cluster (this branch) |
+|---|---|---|
+| **MBA library** | mlxtend (single-node, driver-only) | PySpark FPGrowth (distributed) |
+| **ALS library** | implicit (single-node, driver-only) | PySpark ALS (distributed) |
+| **Data scale** | Limited by driver memory (~1M rows practical max) | Scales to billions of rows |
+| **MBA performance** | ~9 min for 50K orders (one-hot encoding bottleneck) | ~1-2 min for 500K orders |
+| **ALS performance** | ~3 min for 50K orders (batch recommend is fast) | ~2-3 min for 500K orders |
+| **Evaluation** | Sampled (3K/2K rows) | Full test set via distributed joins |
+| **Model fidelity** | mlxtend FPGrowth matches PySpark; implicit ALS differs from Spark ALS | Native PySpark ML, same as production deployments |
+| **Cluster cost** | None (serverless) | ML cluster provisioning (~5-10 min cold start, ~$2-5/run) |
+
+## File Structure Changes
+
+```
+notebooks/
+├── 02_market_basket.py          # REWRITE: PySpark FPGrowth
+├── 03_collaborative_filter.py   # REWRITE: PySpark ALS + Optuna
+├── 02_market_basket_serverless.py    # RENAME: keep current as fallback
+└── 03_collaborative_filter_serverless.py  # RENAME: keep current as fallback
+
+databricks.yml                   # UPDATE: add ML cluster config for tasks 02/03
+config.yaml                      # UPDATE: restore higher defaults (500K orders, 10K users, 20 trials)
+```
+
+---
+
+## Task 1: Preserve Serverless Versions as Fallback
+
+**Files:**
+- Rename: `notebooks/02_market_basket.py` -> `notebooks/02_market_basket_serverless.py`
+- Rename: `notebooks/03_collaborative_filter.py` -> `notebooks/03_collaborative_filter_serverless.py`
+
+- [ ] **Step 1: Rename current notebooks**
+
+```bash
+cd ~/Desktop/Projects/recommender-accelerator
+git mv notebooks/02_market_basket.py notebooks/02_market_basket_serverless.py
+git mv notebooks/03_collaborative_filter.py notebooks/03_collaborative_filter_serverless.py
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add -A
+git commit -m "refactor: rename serverless ML notebooks as fallback variants"
+```
+
+---
+
+## Task 2: Rewrite Notebook 02 - FPGrowth on ML Cluster
+
+**Files:**
+- Create: `notebooks/02_market_basket.py`
+
+Key differences from the serverless version:
+- Uses `pyspark.ml.fpm.FPGrowth` directly on Spark DataFrames (no `.toPandas()`)
+- `numPartitions` via `spark.sparkContext.defaultParallelism` (available on ML clusters)
+- `generate_recommendations()` uses distributed Spark: broadcast join, Window functions, array operations
+- Evaluation runs on full test set via Spark joins (no sampling)
+- Pre-compute lookup uses Spark `generate_recommendations()` with single-item cart DataFrames
+- MLflow PyFunc wraps rules parquet with the same `MBARecommenderModel` class
+
+- [ ] **Step 1: Create 02_market_basket.py**
+
+Create `~/Desktop/Projects/recommender-accelerator/notebooks/02_market_basket.py` with these cells:
+
+**Cell 1: Markdown header**
+```python
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 02 - Market Basket Analysis (PySpark FPGrowth)
@@ -5,14 +89,15 @@
 # MAGIC and generates pre-computed per-product recommendation lookup table.
 # MAGIC
 # MAGIC **Compute**: Requires single-user ML cluster (PySpark ML).
+```
 
-# COMMAND ----------
-
+**Cell 2: %run config_loader** (own cell)
+```python
 # MAGIC %run ./config_loader
+```
 
-# COMMAND ----------
-
-# DBTITLE 1,Load config
+**Cell 3: Load config**
+```python
 import time
 
 cfg = load_config()
@@ -24,17 +109,17 @@ k = cfg.get("recommendation_k", 5)
 experiment_root = cfg.get("mlflow_experiment_root", "/Shared/recommender-accelerator")
 
 print(f"Config: catalog={catalog}.{schema}, min_transactions={min_transactions}, k={k}")
+```
 
-# COMMAND ----------
-
-# DBTITLE 1,Load cleaned orders
+**Cell 4: Load cleaned orders**
+```python
 sdf_cleaned = spark.read.table(f"{catalog}.{schema}.cleaned_orders")
 num_transactions = sdf_cleaned.count()
 print(f"Loaded {num_transactions:,} cleaned orders")
+```
 
-# COMMAND ----------
-
-# DBTITLE 1,EDA - Product support
+**Cell 5: EDA - Product support**
+```python
 from pyspark.sql.functions import explode, col, count
 import matplotlib.pyplot as plt
 
@@ -55,10 +140,10 @@ plt.title("Top 25 Products by Support")
 plt.xticks(rotation=90)
 plt.tight_layout()
 plt.show()
+```
 
-# COMMAND ----------
-
-# DBTITLE 1,Train FPGrowth
+**Cell 6: Train FPGrowth**
+```python
 from pyspark.ml.fpm import FPGrowth
 
 train, test = sdf_cleaned.randomSplit([0.8, 0.2], seed=42)
@@ -77,10 +162,10 @@ model = fpGrowth.fit(train)
 rules_count = model.associationRules.count()
 print(f"Generated {rules_count:,} association rules in {time.time()-t0:.1f}s")
 model.associationRules.sort("antecedent", "consequent").display()
+```
 
-# COMMAND ----------
-
-# DBTITLE 1,Save rules and train/test
+**Cell 7: Save rules and train/test**
+```python
 print("Saving association rules and datasets...")
 t0 = time.time()
 
@@ -95,10 +180,10 @@ test.write.format("delta").mode("overwrite").option("overwriteSchema", "true").s
     f"{catalog}.{schema}.mba_test_dataset"
 )
 print(f"  Saved in {time.time()-t0:.1f}s")
+```
 
-# COMMAND ----------
-
-# DBTITLE 1,Recommendation scoring function
+**Cell 8: Recommendation scoring function**
+```python
 from pyspark.sql.functions import (
     broadcast, array_intersect, array, expr, size, power,
     row_number, collect_list, struct, col
@@ -143,10 +228,10 @@ def generate_recommendations(rules_sdf, cart_sdf, k=5, metric="confidence", test
     )
 
     return top_k
+```
 
-# COMMAND ----------
-
-# DBTITLE 1,Evaluate Hit@k on full test set
+**Cell 9: Evaluate Hit@k on full test set**
+```python
 from pyspark.sql.functions import size, expr, array_contains
 
 rules = (
@@ -174,10 +259,10 @@ top_k_recs = top_k_recs.withColumn(
 
 hit_rate = top_k_recs.agg({"hit_at_k": "avg"}).collect()[0][0]
 print(f"Hit@{k}: {hit_rate:.4f} in {time.time()-t0:.1f}s")
+```
 
-# COMMAND ----------
-
-# DBTITLE 1,Log model to MLflow
+**Cell 10: Log model to MLflow**
+```python
 import mlflow
 import mlflow.pyfunc
 import pandas as pd
@@ -262,10 +347,10 @@ with mlflow.start_run(run_name="mba_fpgrowth"):
     )
 
 print("Model logged to MLflow")
+```
 
-# COMMAND ----------
-
-# DBTITLE 1,Pre-compute MBA lookup table
+**Cell 11: Pre-compute MBA lookup table**
+```python
 import json
 from pyspark.sql import Row
 from pyspark.sql.functions import to_json
@@ -295,8 +380,162 @@ mba_lookup.write.format("delta").mode("overwrite").option("overwriteSchema", "tr
 recs_count = mba_lookup.count()
 print(f"Wrote {recs_count} product recs in {time.time()-t0:.1f}s")
 mba_lookup.display()
+```
 
-# COMMAND ----------
-
+**Cell 12: Lakebase sync note (markdown)**
+```python
 # MAGIC %md
 # MAGIC **Manual step**: Configure Lakebase sync for `mba_recommendations`.
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add notebooks/02_market_basket.py
+git commit -m "feat: rewrite notebook 02 with PySpark FPGrowth for ML cluster"
+```
+
+---
+
+## Task 3: Rewrite Notebook 03 - ALS on ML Cluster
+
+**Files:**
+- Create: `notebooks/03_collaborative_filter.py`
+
+Key differences from serverless version:
+- Uses `pyspark.ml.recommendation.ALS` with distributed training
+- `preprocess_pipeline()` stays in Spark (no `.toPandas()` for training data)
+- Evaluation via `model.recommendForUserSubset()` (distributed)
+- Pre-compute via `model.recommendForAllUsers(k)` (distributed, much faster)
+- Optuna HPO with nested MLflow runs (same structure)
+- Uses `sc.defaultParallelism` for repartitioning
+
+- [ ] **Step 1: Create 03_collaborative_filter.py**
+
+Create `~/Desktop/Projects/recommender-accelerator/notebooks/03_collaborative_filter.py`. Follow the same pattern as the original KFC notebook but with:
+- `%run ./config_loader` in its own cell
+- Config-driven parameters from `cfg`
+- Progress prints with `time.time()` for each major step
+- User-scoped MLflow experiment path
+- Pre-computed lookup table written to `als_recommendations` with JSON recommendations
+- `filter_already_liked_items=False` on `recommendForAllUsers` (app handles cart filtering)
+
+The notebook should have these cells:
+1. `%pip install optuna`
+2. Markdown header
+3. `%run ./config_loader`
+4. Load config
+5. Load data + train/test split
+6. `preprocess_pipeline()` function (Spark-native: explode, integer mappings via Window/row_number, implicit ratings as proportion)
+7. Preprocess training data
+8. Prepare test set (filter >1 item, split cart/added, join to user/item mappings)
+9. `train_als()` function
+10. Optuna HPO with per-trial progress prints
+11. Train final model on full dataset, log to MLflow
+12. Save user/item mappings to Delta
+13. Pre-compute per-user recommendations via `recommendForAllUsers(k)`, explode, join mappings, aggregate as JSON, write to `als_recommendations`
+14. Lakebase sync note
+
+Use the exact same `preprocess_pipeline`, `train_als`, and evaluation pattern from the original KFC notebooks at `/tmp/recommender_model/Recommender Model/02_collaborative_filter.py`, adapted for the config-driven catalog/schema and with progress prints.
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add notebooks/03_collaborative_filter.py
+git commit -m "feat: rewrite notebook 03 with PySpark ALS for ML cluster"
+```
+
+---
+
+## Task 4: Update databricks.yml with ML Cluster Config
+
+**Files:**
+- Modify: `databricks.yml`
+
+- [ ] **Step 1: Add ML cluster definitions for notebooks 02 and 03**
+
+Update the `market_basket` and `collaborative_filter` tasks in `databricks.yml`:
+
+```yaml
+        - task_key: market_basket
+          notebook_task:
+            notebook_path: ./notebooks/02_market_basket.py
+          depends_on:
+            - task_key: data_preparation
+          new_cluster:
+            spark_version: "17.3.x-scala2.13"
+            node_type_id: "Standard_E4ds_v4"
+            num_workers: 2
+            data_security_mode: SINGLE_USER
+
+        - task_key: collaborative_filter
+          notebook_task:
+            notebook_path: ./notebooks/03_collaborative_filter.py
+          depends_on:
+            - task_key: data_preparation
+          new_cluster:
+            spark_version: "17.3.x-scala2.13"
+            node_type_id: "Standard_E4ds_v4"
+            num_workers: 2
+            data_security_mode: SINGLE_USER
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add databricks.yml
+git commit -m "feat: add ML cluster config for notebooks 02 and 03"
+```
+
+---
+
+## Task 5: Update Config Defaults for Higher Fidelity
+
+**Files:**
+- Modify: `config.yaml`
+
+- [ ] **Step 1: Restore production-scale defaults**
+
+```yaml
+order_count: 500000
+user_count: 10000
+store_count: 50
+seed: 42
+
+# Model parameters
+mba_min_transactions: 1000
+mba_min_confidence: 0.0
+als_hpo_trials: 20
+recommendation_k: 5
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add config.yaml
+git commit -m "feat: restore production-scale defaults (500K orders, 10K users, 20 HPO trials)"
+```
+
+---
+
+## Task 6: Update README
+
+**Files:**
+- Modify: `README.md`
+
+- [ ] **Step 1: Update architecture and model sections**
+
+Update to reflect:
+- Notebooks 02-03 now require single-user ML cluster (15.4.x-ml-scala2.12)
+- Serverless fallback notebooks available as `*_serverless.py`
+- Higher defaults: 500K orders, 10K users, 20 HPO trials
+- Updated pipeline runtime estimates
+- Note about workspace requirements (must support classic clusters)
+
+- [ ] **Step 2: Commit and push**
+
+```bash
+git add README.md
+git commit -m "docs: update README for ML cluster models branch"
+git push -u origin feature/ml-cluster-models
+```
