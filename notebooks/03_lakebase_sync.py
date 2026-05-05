@@ -418,24 +418,35 @@ single_rules = (
 
 single_rules_pd = single_rules.toPandas()
 
-# Group by antecedent, collect consequents ordered by confidence DESC, cap at 20
+# Group by antecedent SLUG (not raw name) so LCE product variants that
+# collapse to the same slug, e.g. "5 Meat Feast!" and "5 Meat Feast®" ->
+# "5-meat-feast-", are merged. product_catalog already dedupes by slug, so
+# this keeps mba_recommendations row keys consistent with product_catalog.
 from collections import defaultdict
 
 antecedent_groups = defaultdict(list)
 for _, row in single_rules_pd.iterrows():
-    antecedent_groups[row["antecedent_item"]].append(
-        (row["consequent_item"], float(row["confidence"]))
+    a_slug = slugify(row["antecedent_item"])
+    antecedent_groups[a_slug].append(
+        (slugify(row["consequent_item"]), float(row["confidence"]))
     )
 
 mba_rows = []
-for antecedent_item, consequents in antecedent_groups.items():
-    # Sort by confidence descending, cap at 20
-    consequents_sorted = sorted(consequents, key=lambda x: x[1], reverse=True)[:20]
+for antecedent_slug, consequents in antecedent_groups.items():
+    # Sort by confidence DESC, then dedupe consequents by slug (keep highest
+    # confidence each), cap at 20.
+    consequents_sorted = sorted(consequents, key=lambda x: x[1], reverse=True)
+    seen_consequents = {}
+    for c_slug, score in consequents_sorted:
+        if c_slug not in seen_consequents:
+            seen_consequents[c_slug] = score
+        if len(seen_consequents) >= 20:
+            break
     recs_json = json.dumps([
-        {"consequent": slugify(c), "rule_score": round(s, 6)}
-        for c, s in consequents_sorted
+        {"consequent": c_slug, "rule_score": round(score, 6)}
+        for c_slug, score in seen_consequents.items()
     ])
-    mba_rows.append((slugify(antecedent_item), recs_json))
+    mba_rows.append((antecedent_slug, recs_json))
 
 print(f"  {len(mba_rows):,} MBA antecedent slugs built in {time.time()-t0:.1f}s")
 
