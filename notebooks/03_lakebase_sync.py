@@ -111,11 +111,22 @@ cred = ws.database.generate_database_credential(
     instance_names=[lakebase_instance],
 )
 
+# Resolve a usable Postgres username. ws.current_user.me() works on most
+# clusters but returns NotFound on shared/guest clusters where the runtime
+# identity can't be resolved via the Users API. Fall back to the notebook
+# context's userName (the identity that triggered the job).
+try:
+    pg_user = ws.current_user.me().user_name
+except Exception as e:
+    print(f"  ws.current_user.me() failed ({e!r}); using notebook context userName instead")
+    pg_user = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
+print(f"  Postgres user: {pg_user}")
+
 conn_params = {
     "host": instance.read_write_dns,
     "port": 5432,
     "dbname": "databricks_postgres",
-    "user": ws.current_user.me().user_name,
+    "user": pg_user,
     "password": cred.token,
     "sslmode": "require",
 }
