@@ -91,11 +91,33 @@ import time
 import uuid
 import psycopg2
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.errors import NotFound
+from databricks.sdk.service.database import DatabaseInstance
 
 lakebase_instance = cfg["lakebase_instance"]
 
 ws = WorkspaceClient()
-instance = ws.database.get_database_instance(name=lakebase_instance)
+
+# Create the instance if it doesn't exist yet (first deploy convenience).
+try:
+    instance = ws.database.get_database_instance(name=lakebase_instance)
+    print(f"Found Lakebase instance: {lakebase_instance} (state: {instance.state})")
+except NotFound:
+    print(f"Lakebase instance '{lakebase_instance}' not found. Creating with CU_1 capacity...")
+    ws.database.create_database_instance(DatabaseInstance(name=lakebase_instance, capacity="CU_1"))
+    # Poll until AVAILABLE — cold start is typically 3-5 minutes
+    deadline = time.time() + 600
+    while time.time() < deadline:
+        instance = ws.database.get_database_instance(name=lakebase_instance)
+        state = str(instance.state)
+        print(f"  state: {state}")
+        if "AVAILABLE" in state:
+            break
+        time.sleep(15)
+    else:
+        raise TimeoutError(f"Lakebase instance {lakebase_instance} did not reach AVAILABLE within 10 minutes")
+    print(f"Lakebase instance ready: {lakebase_instance}")
+
 cred = ws.database.generate_database_credential(
     request_id=str(uuid.uuid4()),
     instance_names=[lakebase_instance],
