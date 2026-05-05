@@ -15,10 +15,10 @@ interface ProductGridProps {
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
-  Entrees: "lunch_dining",
-  Sides: "nutrition",
-  Drinks: "local_bar",
-  Desserts: "cake",
+  Entrees: "local_pizza",
+  Sides: "bakery_dining",
+  Drinks: "local_drink",
+  Desserts: "cookie",
   Electronics: "devices",
   Accessories: "watch",
   Clothing: "checkroom",
