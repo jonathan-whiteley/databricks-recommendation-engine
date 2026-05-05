@@ -316,9 +316,11 @@ print(f"  Source als_recommendations: {total_als_users:,} users")
 
 # Deterministic subset: same users every run (stable demo URLs).
 # Oversample 1.5x then limit, so we always hit N when total_als_users >= N.
+# Materialize to pandas once — serverless compute does not support .cache()
+# and re-running .toPandas() on a sampled DataFrame can return different rows.
 fraction = min(1.0, (N_USERS * 1.5) / total_als_users) if total_als_users > 0 else 1.0
-als_subset_sdf = als_src.sample(fraction=fraction, seed=42).limit(N_USERS).cache()
-actual_n = als_subset_sdf.count()
+als_pd = als_src.sample(fraction=fraction, seed=42).limit(N_USERS).toPandas()
+actual_n = len(als_pd)
 print(f"  Selected {actual_n:,} users")
 
 
@@ -330,8 +332,7 @@ def pseudonymize(email: str) -> str:
 
 
 # Build email -> pseudonym dict once; reused below for als + user_profiles.
-subset_emails_pd = als_subset_sdf.select("EmailAddress").toPandas()
-email_to_pseudonym = {e: pseudonymize(e) for e in subset_emails_pd["EmailAddress"]}
+email_to_pseudonym = {e: pseudonymize(e) for e in als_pd["EmailAddress"]}
 print(f"  Pseudonym map built ({len(email_to_pseudonym):,} entries)")
 # Spot-check
 sample_email = next(iter(email_to_pseudonym))
@@ -375,10 +376,8 @@ import json
 print("Building als_recommendations...")
 t0 = time.time()
 
+# `als_pd` is already materialized in the subset cell above.
 # Source schema: EmailAddress STRING, recommendations ARRAY<STRING>, scores ARRAY<DOUBLE>
-# Use the cached subset from the preprocess cell; .toPandas() now pulls only N rows.
-als_pd = als_subset_sdf.toPandas()
-
 als_rows = []
 for _, row in als_pd.iterrows():
     recs  = list(row["recommendations"]) if row["recommendations"] is not None else []
@@ -390,7 +389,6 @@ for _, row in als_pd.iterrows():
     ])
     als_rows.append((email_to_pseudonym[row["EmailAddress"]], recs_json))
 
-als_subset_sdf.unpersist()
 print(f"  {len(als_rows):,} ALS user recommendation sets built in {time.time()-t0:.1f}s")
 
 # COMMAND ----------
