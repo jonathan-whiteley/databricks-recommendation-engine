@@ -1,42 +1,18 @@
-# Recommender Accelerator Configuration
-# Edit this file to configure the pipeline for your environment.
+# Recommender Accelerator Configuration — LCE branch
+# This branch is wired for the LCE pizza-chain dataset. The data pipeline notebooks
+# (00_lce_data_preparation, 01_lce_market_basket, 02_lce_collaborative_filter) read
+# from `ioc_sandbox.ai_strategy.raw_orders_staged` and write back to the same schema.
+# The bridge sync notebook (03_lakebase_sync.py) reads those Delta outputs and loads
+# the four Postgres tables the FastAPI app reads from.
 
-# Industry vertical: qsr | retail | grocery
-# Determines synthetic product catalog and co-purchase patterns.
-# Ignored when source_table is set.
-vertical: qsr
+# Unity Catalog scope used by the LCE notebooks (also referenced by databricks.yml variables)
+catalog: ioc_sandbox
+schema: ai_strategy
 
-# Databricks catalog and schema for all tables
-catalog: jdub_demo
-schema: recommender
+# Lakebase instance the bridge sync notebook writes to and the app binds to.
+# Create once: `databricks database create-database-instance lce-upsell-poc-dev --capacity CU_1`
+lakebase_instance: lce-upsell-poc-dev
 
-# Optional: point to your own transaction table instead of generating synthetic data.
-# When set, skip notebook 00 and run from notebook 01.
-# Table must have columns: user_id STRING, order_id STRING, order_date DATE, products ARRAY<STRING>
-# source_table: my_catalog.my_schema.my_orders
-
-# Items to exclude from recommendations (sauces, utensils, etc.)
-# Only used when source_table is set. Synthetic data has no items to exclude.
-exclude_items: []
-
-# Data generation parameters (only used by notebook 00)
-product_count: 50
-order_count: 500000
-user_count: 10000
-store_count: 50
-seed: 42
-
-# Model parameters
-mba_min_transactions: 1000
-mba_min_confidence: 0.0
-als_hpo_trials: 20
-recommendation_k: 5
-
-# MLflow experiment paths
-mlflow_experiment_root: /Users/jonathan.whiteley@databricks.com/recommender-accelerator
-
-# Lakebase instance name (must exist before running pipeline)
-lakebase_instance: jdub-lakebase-db-instance
-
-# App name (used to auto-grant Lakebase permissions to the app's service principal)
+# App name (without the bundle target suffix). The sync notebook appends "-${bundle.target}"
+# to look up the app's service principal and grant SELECT on the four tables.
 app_name: recommender-accelerator

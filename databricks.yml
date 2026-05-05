@@ -3,11 +3,11 @@ bundle:
 
 variables:
   catalog:
-    default: jdub_demo
+    default: ioc_sandbox
   schema:
-    default: recommender
+    default: ai_strategy
   lakebase_instance:
-    default: jdub-lakebase-db-instance
+    default: lce-upsell-poc-dev
 
 sync:
   include:
@@ -22,19 +22,13 @@ resources:
     recommender_training_pipeline:
       name: "[${bundle.target}] Recommender Training Pipeline"
       tasks:
-        - task_key: data_generation
-          notebook_task:
-            notebook_path: ./notebooks/00_data_generation.py
-
         - task_key: data_preparation
           notebook_task:
-            notebook_path: ./notebooks/01_data_preparation.py
-          depends_on:
-            - task_key: data_generation
+            notebook_path: ./notebooks/00_lce_data_preparation.py
 
         - task_key: market_basket
           notebook_task:
-            notebook_path: ./notebooks/02_market_basket.py
+            notebook_path: ./notebooks/01_lce_market_basket.py
           depends_on:
             - task_key: data_preparation
           new_cluster:
@@ -45,7 +39,7 @@ resources:
 
         - task_key: collaborative_filter
           notebook_task:
-            notebook_path: ./notebooks/03_collaborative_filter.py
+            notebook_path: ./notebooks/02_lce_collaborative_filter.py
           depends_on:
             - task_key: data_preparation
           new_cluster:
@@ -56,7 +50,7 @@ resources:
 
         - task_key: lakebase_sync
           notebook_task:
-            notebook_path: ./notebooks/04_lakebase_sync.py
+            notebook_path: ./notebooks/03_lakebase_sync.py
           depends_on:
             - task_key: market_basket
             - task_key: collaborative_filter
@@ -83,4 +77,5 @@ targets:
     default: true
     mode: development
     workspace:
+      host: https://adb-30827331698809.9.azuredatabricks.net
       profile: azure
