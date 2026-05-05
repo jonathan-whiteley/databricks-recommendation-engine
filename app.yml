@@ -2,6 +2,6 @@ command: ["uvicorn", "recommender_app.backend.app:app", "--workers", "2"]
 
 env:
   - name: LAKEBASE_INSTANCE_NAME
-    value: "jdub-lakebase-db-instance"
+    value: "lce-upsell-poc-dev"
   - name: LAKEBASE_DATABASE
     value: "databricks_postgres"
