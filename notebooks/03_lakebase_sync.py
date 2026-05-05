@@ -383,9 +383,11 @@ als_rows = []
 for _, row in als_pd.iterrows():
     recs  = list(row["recommendations"]) if row["recommendations"] is not None else []
     scores = list(row["scores"])         if row["scores"]          is not None else []
-    # Zip into [{product: ..., score: ...}, ...] preserving ranking order (no truncation)
+    # Slugify the product key so the frontend's product_slug lookup
+    # (productMap) matches and the cart can pull name/price for display.
+    # MBA recs already use slugs; this keeps the two endpoints consistent.
     recs_json = json.dumps([
-        {"product": p, "score": round(float(s), 6)}
+        {"product": slugify(p), "score": round(float(s), 6)}
         for p, s in zip(recs, scores)
     ])
     als_rows.append((email_to_pseudonym[row["EmailAddress"]], recs_json))
