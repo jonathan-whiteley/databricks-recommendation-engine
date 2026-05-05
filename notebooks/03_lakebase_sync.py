@@ -36,36 +36,24 @@ dbutils.library.restartPython()
 
 # COMMAND ----------
 
-# DBTITLE 1,Inline config loader
-import os
-import yaml
+# DBTITLE 1,Read job parameters
+# When run as a job task, values come from databricks.yml `base_parameters`.
+# When run interactively in the workspace, the dbutils widgets default to the
+# strings below (override in the widget UI before running).
+dbutils.widgets.text("lakebase_instance", "lce-upsell-poc-dev")
+dbutils.widgets.text("catalog",           "ioc_sandbox")
+dbutils.widgets.text("schema",            "ai_strategy")
+dbutils.widgets.text("app_name",          "recommender-accelerator")
+dbutils.widgets.text("als_subset_size",   "10000")
 
-
-def load_config() -> dict:
-    """Load config.yaml from the repo root. Tries multiple path candidates to work
-    both when run interactively (cwd may be the repo root) and when executed as a
-    DABS job task (cwd is set to the bundle root by the Databricks runtime)."""
-    candidates = [
-        os.path.join(os.getcwd(), "config.yaml"),
-        os.path.join(os.getcwd(), "..", "config.yaml"),
-        "../config.yaml",
-        "config.yaml",
-    ]
-    for path in candidates:
-        try:
-            resolved = os.path.realpath(path)
-            if os.path.exists(resolved):
-                with open(resolved) as f:
-                    return yaml.safe_load(f)
-        except Exception:
-            continue
-    raise FileNotFoundError(
-        "config.yaml not found. Searched: " + ", ".join(candidates)
-    )
-
-
-cfg = load_config()
-print(f"Config loaded — lakebase_instance: {cfg['lakebase_instance']}, app_name: {cfg.get('app_name', 'recommender-accelerator')}")
+cfg = {
+    "lakebase_instance": dbutils.widgets.get("lakebase_instance"),
+    "catalog":           dbutils.widgets.get("catalog"),
+    "schema":            dbutils.widgets.get("schema"),
+    "app_name":          dbutils.widgets.get("app_name"),
+    "als_subset_size":   int(dbutils.widgets.get("als_subset_size") or "10000"),
+}
+print(f"Config — lakebase_instance: {cfg['lakebase_instance']}, app_name: {cfg['app_name']}, als_subset_size: {cfg['als_subset_size']}")
 
 # COMMAND ----------
 

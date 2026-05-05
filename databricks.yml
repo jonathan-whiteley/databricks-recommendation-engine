@@ -43,6 +43,12 @@ resources:
         - task_key: lakebase_sync
           notebook_task:
             notebook_path: ./notebooks/03_lakebase_sync.py
+            base_parameters:
+              lakebase_instance: ${var.lakebase_instance}
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              app_name: recommender-accelerator
+              als_subset_size: "10000"
           depends_on:
             - task_key: market_basket
             - task_key: collaborative_filter
