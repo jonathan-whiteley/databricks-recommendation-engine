@@ -78,4 +78,4 @@ targets:
     mode: development
     workspace:
       host: https://adb-30827331698809.9.azuredatabricks.net
-      profile: azure
+      profile: lce
