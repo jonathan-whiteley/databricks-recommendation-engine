@@ -300,42 +300,84 @@ for r in sorted(product_rows_deduped, key=lambda x: x[4], reverse=True)[:5]:
 
 # COMMAND ----------
 
-# DBTITLE 1,Build user_profiles DataFrame
+# DBTITLE 1,Subset + pseudonymize users (PII obfuscation)
+# Pick a deterministic subset of ALS users and build an email -> pseudonym map.
+# Both als_recommendations and user_profiles use the same map so the app's
+# `JOIN ... ON a.user_id = p.user_id` continues to work. Real emails never
+# land in Postgres — only `user-<6 hex>` pseudonyms.
+import hashlib
+
+N_USERS = int(cfg.get("als_subset_size", 10_000))
+print(f"Subsetting users for the demo (target N = {N_USERS:,})...")
+
+als_src = spark.read.table(ALS_RECS_TABLE)
+total_als_users = als_src.count()
+print(f"  Source als_recommendations: {total_als_users:,} users")
+
+# Deterministic subset: same users every run (stable demo URLs).
+# Oversample 1.5x then limit, so we always hit N when total_als_users >= N.
+fraction = min(1.0, (N_USERS * 1.5) / total_als_users) if total_als_users > 0 else 1.0
+als_subset_sdf = als_src.sample(fraction=fraction, seed=42).limit(N_USERS).cache()
+actual_n = als_subset_sdf.count()
+print(f"  Selected {actual_n:,} users")
+
+
+def pseudonymize(email: str) -> str:
+    """Stable, distinct, non-PII user id. Same email always maps to the same
+    pseudonym; collision rate at 10K users with 6 hex chars is ~1 in 200K."""
+    h = hashlib.sha256(email.encode("utf-8")).hexdigest()[:6]
+    return f"user-{h}"
+
+
+# Build email -> pseudonym dict once; reused below for als + user_profiles.
+subset_emails_pd = als_subset_sdf.select("EmailAddress").toPandas()
+email_to_pseudonym = {e: pseudonymize(e) for e in subset_emails_pd["EmailAddress"]}
+print(f"  Pseudonym map built ({len(email_to_pseudonym):,} entries)")
+# Spot-check
+sample_email = next(iter(email_to_pseudonym))
+print(f"  Example: <real email> -> {email_to_pseudonym[sample_email]}")
+
+# COMMAND ----------
+
+# DBTITLE 1,Build user_profiles DataFrame (subset + pseudonymized)
 print("Building user_profiles...")
 t0 = time.time()
 
 from pyspark.sql.functions import countDistinct
 
+subset_emails_list = list(email_to_pseudonym.keys())
+
+# Narrow cleaned dataset to the same users we kept for als_recommendations
 user_profiles_sdf = (
     cleaned
+    .filter(col("EmailAddress").isin(subset_emails_list))
     .groupBy("EmailAddress")
     .agg(countDistinct("CVOrderID").alias("total_orders"))
-    .select(
-        col("EmailAddress").alias("user_id"),
-        lit(None).cast("string").alias("primary_store"),   # LCE data has no store info
-        lit(None).cast("int").alias("store_visits"),       # LCE data has no store info
-        col("total_orders"),
-    )
 )
 
 user_profiles_pd = user_profiles_sdf.toPandas()
 user_profile_rows = [
-    (r.user_id, r.primary_store, r.store_visits, int(r.total_orders))
+    (
+        email_to_pseudonym[r.EmailAddress],   # pseudonym, not raw email
+        None,                                  # primary_store (LCE data has none)
+        None,                                  # store_visits (LCE data has none)
+        int(r.total_orders),
+    )
     for _, r in user_profiles_pd.iterrows()
 ]
 print(f"  {len(user_profile_rows):,} user profiles built in {time.time()-t0:.1f}s")
 
 # COMMAND ----------
 
-# DBTITLE 1,Build als_recommendations DataFrame
+# DBTITLE 1,Build als_recommendations DataFrame (subset + pseudonymized)
 import json
 
 print("Building als_recommendations...")
 t0 = time.time()
 
 # Source schema: EmailAddress STRING, recommendations ARRAY<STRING>, scores ARRAY<DOUBLE>
-als_src = spark.read.table(ALS_RECS_TABLE)
-als_pd  = als_src.toPandas()
+# Use the cached subset from the preprocess cell; .toPandas() now pulls only N rows.
+als_pd = als_subset_sdf.toPandas()
 
 als_rows = []
 for _, row in als_pd.iterrows():
@@ -346,8 +388,9 @@ for _, row in als_pd.iterrows():
         {"product": p, "score": round(float(s), 6)}
         for p, s in zip(recs, scores)
     ])
-    als_rows.append((str(row["EmailAddress"]), recs_json))
+    als_rows.append((email_to_pseudonym[row["EmailAddress"]], recs_json))
 
+als_subset_sdf.unpersist()
 print(f"  {len(als_rows):,} ALS user recommendation sets built in {time.time()-t0:.1f}s")
 
 # COMMAND ----------

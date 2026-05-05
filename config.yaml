@@ -10,9 +10,16 @@ catalog: ioc_sandbox
 schema: ai_strategy
 
 # Lakebase instance the bridge sync notebook writes to and the app binds to.
-# Create once: `databricks database create-database-instance lce-upsell-poc-dev --capacity CU_1`
+# The sync notebook auto-creates this instance with CU_1 capacity if it does not exist.
 lakebase_instance: lce-upsell-poc-dev
 
 # App name (without the bundle target suffix). The sync notebook appends "-${bundle.target}"
 # to look up the app's service principal and grant SELECT on the four tables.
 app_name: recommender-accelerator
+
+# Demo user subset. Caps how many users land in Lakebase (the source
+# als_recommendations table has ~9.9M users, which OOMs the driver on .toPandas()).
+# Subsetting is deterministic (seed=42), so re-running the sync produces the
+# same users. Raw emails are pseudonymized to `user-<6 hex sha256>` before write,
+# so no PII reaches Postgres or the app.
+als_subset_size: 10000
