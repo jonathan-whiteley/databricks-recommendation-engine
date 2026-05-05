@@ -325,8 +325,10 @@ print(f"  Selected {actual_n:,} users")
 
 def pseudonymize(email: str) -> str:
     """Stable, distinct, non-PII user id. Same email always maps to the same
-    pseudonym; collision rate at 10K users with 6 hex chars is ~1 in 200K."""
-    h = hashlib.sha256(email.encode("utf-8")).hexdigest()[:6]
+    pseudonym. 10 hex chars = ~1 trillion space; birthday-paradox collision
+    probability at 10K users is ~5e-7. Bump higher if als_subset_size grows
+    past 1M."""
+    h = hashlib.sha256(email.encode("utf-8")).hexdigest()[:10]
     return f"user-{h}"
 
 
