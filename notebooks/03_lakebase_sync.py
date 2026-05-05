@@ -223,7 +223,7 @@ def categorize(name: str):
     """
     n = name.lower()
     if "pizza" in n or n.startswith("classic "):
-        return "Pizza", 9.99
+        return "Entrees", 9.99
     if "bread" in n or "wings" in n or "crazy" in n:
         return "Sides", 4.99
     if any(k in n for k in ("pepsi", "dew", "fanta", "coke", "drink")):
