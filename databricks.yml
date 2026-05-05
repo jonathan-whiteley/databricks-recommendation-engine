@@ -52,7 +52,7 @@ resources:
           depends_on:
             - task_key: market_basket
             - task_key: collaborative_filter
-          existing_cluster_id: 1117-191048-9vmg8d5r  # unity-shared-ai-guest
+          # Serverless: runs as the deploying user, who has Lakebase admin.
 
       # Schedule OFF by default. Customer enables when ready.
       # schedule:
