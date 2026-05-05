@@ -31,22 +31,14 @@ resources:
             notebook_path: ./notebooks/01_lce_market_basket.py
           depends_on:
             - task_key: data_preparation
-          new_cluster:
-            spark_version: "17.3.x-scala2.13"
-            node_type_id: "Standard_E4ds_v4"
-            num_workers: 2
-            data_security_mode: SINGLE_USER
+          existing_cluster_id: 1117-191048-9vmg8d5r  # unity-shared-ai-guest
 
         - task_key: collaborative_filter
           notebook_task:
             notebook_path: ./notebooks/02_lce_collaborative_filter.py
           depends_on:
             - task_key: data_preparation
-          new_cluster:
-            spark_version: "17.3.x-scala2.13"
-            node_type_id: "Standard_E4ds_v4"
-            num_workers: 2
-            data_security_mode: SINGLE_USER
+          existing_cluster_id: 1117-191048-9vmg8d5r  # unity-shared-ai-guest
 
         - task_key: lakebase_sync
           notebook_task:
@@ -54,11 +46,7 @@ resources:
           depends_on:
             - task_key: market_basket
             - task_key: collaborative_filter
-          new_cluster:
-            spark_version: "17.3.x-scala2.13"
-            node_type_id: "Standard_E4ds_v4"
-            num_workers: 2
-            data_security_mode: SINGLE_USER
+          existing_cluster_id: 1117-191048-9vmg8d5r  # unity-shared-ai-guest
 
       # Schedule OFF by default. Customer enables when ready.
       # schedule:
